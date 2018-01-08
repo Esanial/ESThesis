@@ -1,3 +1,9 @@
+---
+title: "Part2AfServices"
+author: "Elsa SANIAL"
+date: "8 janvier 2018"
+output: pdf_document
+---
 ##Diversity calculation with package entropart##
 
 library(entropart)
