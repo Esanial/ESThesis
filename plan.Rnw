@@ -16,9 +16,8 @@
 \date{15/01/2018}
 
 
-\usepackage{Sweave}
 \begin{document}
-\input{plan-concordance}
+\SweaveOpts{concordance=TRUE}
 \maketitle
 
 \begin{figure}[H]
