@@ -4,14 +4,120 @@ author: "Elsa SANIAL"
 date: "8 janvier 2018"
 output: pdf_document
 ---
+
+##General description of trees present in cocoa plots##
+##Family, gender, species##
+## Name correction##
+install.packages("BIOMASS",dependencies = TRUE)
+library(BIOMASS)
+library(dplyr)
+library(ggplot)
+
+biom<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/data220218.csv")
+str(biom)
+Arbres<-as.data.frame(unique(biom$nom_arb))
+library(dplyr)
+
+nomarb<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/nomarbtot220218.csv")
+
+biom2<-merge(biom,nomarb,by="nom_arb")
+
+#correct taxo#
+
+Taxo<-correctTaxo(genus=biom2$Genre,species=biom2$Espèce)
+table(biom2$Genre==biom2$genusCorr)
+biom2$genusCorr<-Taxo$genusCorrected
+table(biom2$Espèce==biom2$speciesCorr)
+biom2$speciesCorr<-Taxo$speciesCorrected
+
+#correction de la famille#
+APG<-getTaxonomy(Taxo$genusCorrected,findOrder=T)
+biom2$familyAPG<-APG$family
+biom2$orderAPG<-APG$order
+str(biom2)
+
+## Création de la variable nom scientifique##
+biom2$nom_sc<-paste(biom2$Genre,biom2$Espèce,sep=" ","(",biom2$Famille,")")
+str(biom2$nom_sc)
+
+##Création de la variable nom total avec le nom vernaculaire choisi##
+biom2$nom_tot<-paste(biom2$Genre,biom2$Espèce,sep=" ","(",biom2$Famille,")",":",biom2$nom_arb)
+str(biom2$nom_tot)
+
+#Nb of different families#
+Families<-as.data.frame(unique(biom2$Famille))
+Familiesfreq<-as.data.frame(table(biom2$Famille))
+
+#Nb of different genders#
+Genders<-as.data.frame(unique(biom2$Genre))
+Gendersfreq<-as.data.frame(table(biom2$Genre))
+
+#Nb of different species#
+Species <-as.data.frame(unique(biom2$nom_sc))
+Speciesfreq<-as.data.frame(table(biom2$nom_sc))
+##Average Densities##
+str(biom2)
+library(ggplot2)
+min(biom2$densit)
+max(biom2$densit)
+hist(biom2$densit)
+plot(biom2$code,biom2$densit)
+
+##Average diversity##
+
+##Size##
+
+##Fruit or forests trees##
+Type<-as.data.frame(table(biom2$typ))
+plot(biom2$typ)
+
+#essai pour faire un histogramme avec des colonnes par type et en empilement les différents arbres pour voir la répartition#
+str(Speciesfreq)
+Speciesfreq$nom_sc<-Speciesfreq$Var1
+
+biom2<-merge(biom2,Speciesfreq,by="nom_sc")
+
+biom2<-arrange(biom2,nom_arb,Freq.x)
+#réordonner la variable typ#
+biom2$typ<-factor(biom2$typ,levels=c("fruit","for","exo"))
+#réordonner la variable nom_arb#
+biom2$Freq.x<-as.numeric(biom2$Freq.x)
+class(biom2$Freq.x)
+biom2<-biom2[order(biom2$Freq.x),]
+#prendre en compte le nouvel ordre"
+biom2$nom_arb<-factor(biom2$nom_arb,levels=biom2$nom_arb[order(biom2$Freq.x)])
+biom2$nom_arb
+
+#Histogramme#
+library(ggplot2)
+g<-ggplot(biom2,aes(typ,fill=nom_arb))
+g1<-g+geom_bar(position="stack",colour="black")
+g1+theme(legend.position='none')
+
+
+##Name of the 20 most common (all, fruit and forest)##
+Mostcommon<-as.data.frame(table(biom2$nom_sc))
+
+For<-as.data.frame(subset(biom2,typ=="for"))
+Commonfor<-as.data.frame(table(For$nom_tot))
+
+Fruit<-as.data.frame(subset(biom2,typ=="fruit"))
+Commonfruit<-as.data.frame(table(Fruit$nom_tot))
+
+Exo<-as.data.frame(subset(biom2,typ=="exo"))
+Commonexo<-as.data.frame(table(Exo$nom_sc))
+
+
+
+
 ##Diversity calculation with package entropart##
 
 library(entropart)
 #Data opening#
 
-botadiv<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/Databota3.csv")
+botadiv<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/data220218.csv")
 str(botadiv)
-
+unique(botadiv$nom_arb)
 #Metacommunity creation#
 #Pondération par la surface#
 #Abundance#
@@ -110,3 +216,146 @@ help("var")
 ##Tries on Carbon model#
 help("step")
 step(lm,)
+
+
+
+
+#----------------------------------------------------------------#
+
+##SERVICE BOIS D'OEUVRE#
+
+##Timber species##
+#ouverture des fichiers avec prise en compte des valeurs manquantes#
+timb<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/data4sit.csv")
+
+nomarb<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/nomarbtot220218.csv",na.string="")
+#ouverture des packages nécessaires#
+library(ggplot2)
+library(dplyr)
+
+#fusion des deux fichiers#
+timb2<-merge(timb,nomarb,by="nom_arb")
+Tabesp<-as.data.frame(table(timb2$nom_arb))
+Tabesp$nom_arb<-Tabesp$Var1
+Tabesp2<-merge(Tabesp,nomarb,by="nom_arb")
+
+
+#création d'une variable âge médian (mT)#
+t<-summarise(group_by(timb,nom_arb),mT=median(age_créat))
+
+Tabesp3<-merge(Tabesp2,t,by="nom_arb")
+
+#création variable nom scientifique#
+Tabesp3$nom_sc<-paste(Tabesp3$Genre,Tabesp3$Espèce,sep=" ")
+
+
+#Graphique bois oeuvre, fréquence, arbre#
+g<-ggplot(Tabesp3,aes(mT,Freq,color=timber,label=nom_sc))+
+scale_color_manual(values=c("gray3","red4"))+
+geom_point()+geom_text(hjust=-0.05,angle=45,check_overlap=TRUE,show.legend=FALSE,aes(fontface=3,size=3))+coord_trans(y="log2")
+g
+
+library(ggrepel)
+#Graphique bois oeuvre, fréquence#
+g1<-ggplot(Tabesp3,aes(timber,Freq,color=timber,label=nom_sc))+
+scale_color_manual(values=c(gray3","red4"))+
+geom_point()+geom_text(hjust=-0.05,angle=45,check_overlap=TRUE,show.legend=FALSE,aes(size=3,fontface=3))+coord_trans(y="log2")
+g1
+
+#Graphique bois oeuvre, fréquence, et visibilité de tous les noms#
+g2<-ggplot(Tabesp3,aes(timber,Freq,color=timber,label=nom_sc))+
+scale_color_manual(values=c(gray3","red4"))+
+geom_point()+geom_text_repel(show.legend=FALSE,aes(size=3,fontface=3))+coord_trans(y="log2")
+g2
+
+#graphqiue bois oeuvre, fréquence et visibilité de tous les noms sans échelle logarithmique#
+
+g3<-ggplot(Tabesp3,aes(timber,Freq,color=timber,label=nom_sc))+
+scale_color_manual(values=c("gray100","gray3","red4"))+
+geom_point()+geom_text_repel(show.legend=FALSE,aes(size=3,fontface=3))
+g3
+
+#Le bon graphique sans les valeurs manquantes#
+Tabesp4<-Tabesp3[!is.na(Tabesp3$timber),]
+str(Tabesp4)
+
+g4<-ggplot(Tabesp4,aes(timber,Freq,color=timber,label=nom_sc))+
+scale_color_manual(values=c("gray3","red4"))+
+geom_point()+geom_text_repel(show.legend=FALSE,size=3,aes(fontface=3))+coord_trans(y="log2")
+g4
+
+g4+ggtitle("Nombre d'individus recensés \n(essences commercialisables et non commercialisables)")+xlab("Type de bois")+ylab("Nombre d'individus")+scale_x_discrete(breaks=c("non","oui"),labels=c("Non commercialisable","Commercialisable"))+theme(legend.position='none',plot.title=element_text(size=20),axis.title.x=element_text(size=14),axis.title.y=element_text(size=14),axis.text.x=element_text(size=12))
+
+
+g5<-ggplot(Tabesp4,aes(timber,Freq,color=timber,label=nom_sc))+
+scale_color_manual(values=c("gray3","red4"))+
+geom_point()+geom_text_repel(show.legend=FALSE,aes(size=3,fontface=3))
+g5
+
+plot(timb2$timber,)
+
+
+
+#---------------------------------------------------------------------#
+
+
+
+#graph spectre écologique#
+spectr<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/spectreco.csv",na.string="")
+str(spectr)
+
+spectr2<-merge(spectr,Tabesp4,by="nom_arb")
+data<-(c(1))
+data<-as.data.frame(data)
+
+data$forsemp<-sum(spectr2$forsemp,na.rm=TRUE)
+data$forsemptrans<-sum(spectr2$sorsemptrans,na.rm=TRUE)
+data$forsemidec<-sum(spectr2$forsemidec,na.rm=TRUE)
+data$forsdtrans<-sum(spectr2$forsdtrans,na.rm=TRUE)
+data$savguin<-sum(spectr2$savguin,na.rm=TRUE)
+data$savsoud<-sum(spectr2$savsoud,na.rm=TRUE)
+data<-data[,-1]
+
+spectr2$indforsemp<-spectr2$Freq*spectr2$forsemp
+spectr2$indforsemptrans<-spectr2$Freq*spectr2$sorsemptrans
+spectr2$indforsemidec<-spectr2$Freq*spectr2$forsemidec
+spectr2$indforsdtrans<-spectr2$Freq*spectr2$forsdtrans
+spectr2$indsavguin<-spectr2$Freq*spectr2$savguin
+spectr2$indsavsoud<-spectr2$Freq*spectr2$savsoud
+
+data$indforsemp<-sum(spectr2$indforsemp,na.rm=TRUE)
+data$indforsemptrans<-sum(spectr2$indforsemptrans,na.rm=TRUE)
+data$indforsemidec<-sum(spectr2$indforsemidec,na.rm=TRUE)
+data$indforsdtrans<-sum(spectr2$indforsdtrans,na.rm=TRUE)
+data$indsavguin<-sum(spectr2$indsavguin,na.rm=TRUE)
+data$indsavsoud<-sum(spectr2$indsavsoud,na.rm=TRUE)
+
+
+#seulement les arbres de forêt#
+spectr3<-subset(spectr2,spectr2$typ=="for")
+
+data$forsemp2<-sum(spectr3$forsemp,na.rm=TRUE)
+data$forsemptrans2<-sum(spectr3$sorsemptrans,na.rm=TRUE)
+data$forsemidec2<-sum(spectr3$forsemidec,na.rm=TRUE)
+data$forsdtrans2<-sum(spectr3$forsdtrans,na.rm=TRUE)
+data$savguin2<-sum(spectr3$savguin,na.rm=TRUE)
+data$savsoud2<-sum(spectr3$savsoud,na.rm=TRUE)
+
+
+
+
+data$indforsemp2<-sum(spectr3$indforsemp,na.rm=TRUE)
+data$indforsemptrans2<-sum(spectr3$indforsemptrans,na.rm=TRUE)
+data$indforsemidec2<-sum(spectr3$indforsemidec,na.rm=TRUE)
+data$indforsdtrans2<-sum(spectr3$indforsdtrans,na.rm=TRUE)
+data$indsavguin2<-sum(spectr3$indsavguin,na.rm=TRUE)
+data$indsavsoud2<-sum(spectr3$indsavsoud,na.rm=TRUE)
+
+spectr3$sempstrict<-ifelse(spectr3$forsemp==1&spectr3$sorsemptrans==0,1,0)
+sum(spectr3$sempstrict,na.rm=TRUE)
+sum(spectr3$sempstrict*spectr3$Freq,na.rm=TRUE)
+
+
+
+
+
