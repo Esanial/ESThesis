@@ -1,0 +1,96 @@
+---
+title: "Partie 2 Service Carbone"
+author: "Elsa SANIAL"
+date: "11 juin 2018"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    keep_md: true
+
+---
+```{r packages, message=FALSE, warning=FALSE, include=FALSE}
+library(dplyr)
+library(tidyr)
+library(entropart)
+library(vegan)
+library(reshape)
+library(ggplot2)
+library(nnet)
+library(BIOMASS)
+```
+```{r include=FALSE}
+#Full data 
+tree<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/tree.csv",na.string="")
+plot<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/plot.csv")
+esp<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/esp.csv")
+plot_na<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/plot2.csv")
+```
+
+```{r Sélection des parcelles pour le calcul du carbone, include=FALSE}
+carbondata<-tree[!is.na(tree$peri_tig),]
+```
+
+```{r Corriger la taxonomie, include=FALSE}
+Taxo<-correctTaxo(genus=carbondata$Genre,species=carbondata$Espece)
+table(carbondata$Genre==Taxo$genusCorr)
+carbondata$genusCorr<-Taxo$genusCorrected
+table(carbondata$Espece==Taxo$speciesCorr)
+carbondata$speciesCorr<-Taxo$speciesCorrected
+#correction de la famille#
+APG<-getTaxonomy(Taxo$genusCorrected,findOrder=T)
+carbondata$familyAPG<-APG$family
+carbondata$orderAPG<-APG$order
+```
+
+```{r obtenir la densité du bois par espèce, include=FALSE}
+dataWD<-getWoodDensity(genus=carbondata$genusCorr,
+                       species=carbondata$speciesCorr,
+                       stand=carbondata$code)
+table(factor(dataWD$levelWD))
+carbondata$WD=dataWD$meanWD
+carbondata$WDsd=dataWD$sdWD
+```
+
+```{r calcul biomasse aérienne, include=FALSE}
+#transformation du périmètre en diamètre#
+carbondata$diam<-2*(((carbondata$peri_tig)/2)/pi)
+carbondata$taille<-as.numeric(carbondata$taille)
+#Estimation de biomasse#
+AGBtree<-computeAGB(D=carbondata$diam,WD=carbondata$WD,H=carbondata$taille)
+carbondata$AGB=AGBtree
+```
+
+```{r somme par parcelle, include=FALSE}
+Carbonestimated<-as.data.frame(tapply(carbondata$AGB,carbondata$code,sum))
+#renommer la colonne#
+name<-"ABGplot"
+colnames(Carbonestimated)<-name
+Carbonestimated<-as.data.frame(Carbonestimated[!is.na(Carbonestimated$ABGplot),])
+colnames(Carbonestimated)<-name
+rm("name")
+```
+
+```{r ajout au df plot, include=FALSE}
+Carbonestimated$code<-rownames(Carbonestimated)
+plot<-merge(plot,Carbonestimated,"code",all=TRUE)
+plot$carbonhect<-(plot$ABGplot/plot$sup)
+```
+
+```{r echo=FALSE}
+names<-plot$code
+plot(plot$densit,plot$carbonhect)+
+text(plot$densit,plot$carbonhect,names)
+```
+```{r echo=FALSE}
+plot2<-plot[!is.na(plot$carbonhect),]
+plot2[,c(1,8,19)]
+```
+
+```{r include=FALSE}
+rm("plot2")
+```
+
+
+
+
