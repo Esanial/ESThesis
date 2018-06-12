@@ -18,6 +18,7 @@ library(reshape)
 library(ggplot2)
 library(nnet)
 library(BIOMASS)
+library(xtable)
 ```
 ```{r include=FALSE}
 #Full data 
@@ -26,7 +27,7 @@ plot<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/pl
 esp<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/esp.csv")
 plot_na<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/plot2.csv")
 ```
-
+#Estimation de la biomasse aérienne des arbres associés aux cacaoyers
 ```{r Sélection des parcelles pour le calcul du carbone, include=FALSE}
 carbondata<-tree[!is.na(tree$peri_tig),]
 ```
@@ -74,23 +75,127 @@ rm("name")
 ```{r ajout au df plot, include=FALSE}
 Carbonestimated$code<-rownames(Carbonestimated)
 plot<-merge(plot,Carbonestimated,"code",all=TRUE)
-plot$carbonhect<-(plot$ABGplot/plot$sup)
+plot$biomhect<-(plot$ABGplot/plot$sup)
 ```
 
 ```{r echo=FALSE}
 names<-plot$code
-plot(plot$densit,plot$carbonhect)+
-text(plot$densit,plot$carbonhect,names)
+plot(plot$densit,plot$biomhect)+
+text(plot$densit,plot$biomhect,names,col=(plot$age_champ))
+rm("names")
 ```
 ```{r echo=FALSE}
-plot2<-plot[!is.na(plot$carbonhect),]
-plot2[,c(1,8,19)]
+plot2<-plot[!is.na(plot$biomhect),]
+plot2[,c("code","densit","biomhect")]
 ```
 
 ```{r include=FALSE}
 rm("plot2")
 ```
+#Estimation de la biomasse aérienne des cacaoyers
+##Estimation de la densité
+La densité de cacaoyers n'a pas été mesurée sur les parcelles inventoriées. 
+
+Toutefois, je dispose d'un jeu de données constitué lors de mon Master 2 (avec IDH/CIRAD/ALP). J'avais mesuré les densités de cacaoyers sur 61 parcelles de 12 à 52 ans dans l'ouest ivoirien. Sur chaque parcelle, les cacaoyers ont été comptés dans 4 carrés de 100m² (Sanial, 2015, Ruf et al., 2015). J'ai ensuite calculé la densité moyenne de ces 4 carrés pour chaque parcelle. 
+Dans ce jeu de données, la relation entre âge du champ et densité peut s'écrire selon l'équation linéaire suivante : -0.15x+19.5
+
+Ainsi, j'ai pu estimer la densité des cacaoyers en fonction de l'âge pour chacune des parcelles inventoriées dans le cadre de me thèse. 
+
+```{r Densite moy sur les parcelles, echo=TRUE, message=FALSE, warning=FALSE}
+#Ajout du cacao#
+Carbonestimated<-merge(Carbonestimated,plot,"code")
+Carbonestimated$kkodensit<-(((-0.15*Carbonestimated$age_champ)+19.5)*100)
+```
+
+L'estimation de la densité moyenne des cacaoyers (nbr cacaoyers/hectares) (
+```{r echo=FALSE, results='asis'}
+mean(Carbonestimated$kkodensit)
+```
+) est supérieure à ce qui a été mesuré par Stemler (2012): 1100 cacaoyers/hectares dans le sud Ivoirien. 
+
+Toutefois, lors des inventaires botaniques, les portions de la parcelle n'ayant pas de cacaoyers ont été cartographiées au GPS. Cela permet de connaître le pourcentage d'espaces vides de cacaoyers par rapport à la superficie totale inventoriée. Une fois ce pourcentage pris en compte on obtient une densité de cacaoyers à l'hectare plus faible avec une moyenne de:
+
+```{r include=FALSE}
+Carbonestimated$kkodensitmoinsparc<-Carbonestimated$kkodensit-(Carbonestimated$kkodensit*Carbonestimated$parc/100)
+```
+```{r echo=FALSE,results='asis'}
+mean(Carbonestimated$kkodensitmoinsparc)
+```
+ cacaoyers par hectare .
+
+##Estimation de la biomasse aérienne
+
+La biomasse aérienne du cacaoyer, d'après le modèle de Zuidema et al.,(2005), représente 88.2% de la biomasse totale (d'après la compilation de différentes mesures effectuées au Brésil, Congo, Costa Rica, Malaysie, Nigeria et Vénézuela). 
+La régression logarithmique entre l'âge de l'arbre et la biomasse est, toujours d'après ce modèle physiologique : 
+9.35ln(x)+7.88. 
+
+J'utilise cette équation pour estimer la biomasse des cacaoyers en prenant en compte l'âge de la plantation (compris ici, de manière schématique comme l'âge du cacaoyer). 
+
+On obtient ainsi la biomasse totale. Pour obtenir une estimation de la biomasse aérienne pour chaque cacaoyer, il faut prendre 88.2% de la biomasse totale.
+
+```{r calcul de la biomasse modele de Zuidema, echo=TRUE}
+Carbonestimated$kkobiomasse<-((((9.35*log(Carbonestimated$age_champ)+7.87)*88.2)/100)*Carbonestimated$kkodensitmoinsparc)/1000
+#Limite de ce calcul: les données sont prises sur des plantations ombragées, donc avec plus de biomasse cacaoyère. 
+```
+
+Une autre méthode pourrait être choisie: utiliser le package BIOMASS et prendre en compte également la hauteur des caacoyers qui est fonction de l'ombrage (20 à 25m sous ombrage fort contre 3 à 10m sous ombrage léger Van Vliet (2015)). 
 
 
+#Estimation de la biomasse totale et du carbone (Tonnes/hect) (arbres associés et cacaoyers)
+```{r include=FALSE}
+Carbonestimated$biomtot<-Carbonestimated$biomhect+Carbonestimated$kkobiomasse
+Carbonestimated$carbontot<-Carbonestimated$biomtot/2
+```
 
+```{r echo=FALSE}
+Carbonestimated[,c("code","densit","biomhect","kkobiomasse","biomtot","carbontot")]
+```
+```{r}
+hist(Carbonestimated$carbontot)
+boxplot(Carbonestimated$carbontot,main="Tonne de carbone/hect")
+```
+
+Les parcelles étudiées stockent de
+```{r echo=FALSE, results='asis'}
+min(Carbonestimated$carbontot)
+```
+à
+```{r echo=FALSE, results='asis'}
+max(Carbonestimated$carbontot)
+```
+tonnes de carbone par hectare (cacaoyers+arbres associés). 
+
+En moyenne on estime 
+```{r echo=FALSE, results="asis"}
+mean(Carbonestimated$carbontot)
+```
+(sd
+```{r echo=FALSE, results="asis"}
+sd(Carbonestimated$carbontot)
+```
+) tonnes de carbone/hectare. 
+
+Pour indication, d'après Nijmeijer et al., (2017) une agroforêt à cacao camerounaise stocke en moyenne 72 tonnes par hectare (sd 8). 
+
+Il convient de garder à l'esprit que l'estimation de biomasse aérienne des cacaoyers peut être sur-estimée dans notre étude: en effet les données d'observation sont issues de plantation ombragées. Dans ces conditions d'ombrage, les cacaoyers ont plus de biomasse que dans des conditions moins ombragées comme on l'observe plus couramment en Côte d'Ivoire. 
+
+#Estimation du carbone par type d'arbres
+
+```{r include=FALSE}
+carbondata$meth_introsimp[carbondata$meth_intro == "1"] <- "1"
+carbondata$meth_introsimp[carbondata$meth_intro == "2"] <- "2"
+carbondata$meth_introsimp[carbondata$meth_intro == "3"] <- "3"
+carbondata$meth_introsimp[carbondata$meth_intro == "4"] <- "1"
+carbondata$meth_introsimp[carbondata$meth_intro == "5"] <- "5"
+carbondata$meth_introsimp[carbondata$meth_intro == "6"] <- "1"
+carbondata$meth_introsimp[carbondata$meth_intro == "7"] <- "5"
+carbondata$meth_introsimp=factor(carbondata$meth_introsimp,c("1","3","5","2"))
+typsimp<-tapply(carbondata$AGB,carbondata$meth_introsimp,sum)
+```
+```{r echo=FALSE}
+barplot(typsimp,names.arg=c("Planté","Recrû \n spontané","Maintenu \n au défrichement","Don \n certification"),space=0.5,main="Carbone total estimé \n par type de mode d'introduction de l'arbre",ylab="Carbone estimé (tonnes par hectare)",xlab="Mode d'introduction",border=NA,col=grey.colors(4))
+
+#Affiché en % du carbone total
+barplot(prop.table(typsimp)*100,names.arg=c("Planté","Recrû \n spontané","Maintenu \n au défrichement","Don \n certification"),space=0.5,main="Carbone total estimé \n par type de mode d'introduction de l'arbre",ylab="Carbone estimé (% carbone total)",xlab="Mode d'introduction",border=NA,col=grey.colors(4))
+```
 
