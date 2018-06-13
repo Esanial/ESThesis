@@ -1,5 +1,5 @@
 ---
-title: "Partie 2 Service Carbone"
+title: "Partie 2 Services: Carbone, Diversité"
 author: "Elsa SANIAL"
 date: "11 juin 2018"
 output: 
@@ -16,9 +16,7 @@ library(entropart)
 library(vegan)
 library(reshape)
 library(ggplot2)
-library(nnet)
 library(BIOMASS)
-library(xtable)
 ```
 ```{r include=FALSE}
 #Full data 
@@ -93,7 +91,7 @@ plot2[,c("code","densit","biomhect")]
 rm("plot2")
 ```
 #Estimation de la biomasse aérienne des cacaoyers
-##Estimation de la densité
+##Estimation de la densité des cacaoyers (nbr cacaoyers/hect)
 La densité de cacaoyers n'a pas été mesurée sur les parcelles inventoriées. 
 
 Toutefois, je dispose d'un jeu de données constitué lors de mon Master 2 (avec IDH/CIRAD/ALP). J'avais mesuré les densités de cacaoyers sur 61 parcelles de 12 à 52 ans dans l'ouest ivoirien. Sur chaque parcelle, les cacaoyers ont été comptés dans 4 carrés de 100m² (Sanial, 2015, Ruf et al., 2015). J'ai ensuite calculé la densité moyenne de ces 4 carrés pour chaque parcelle. 
@@ -123,7 +121,7 @@ mean(Carbonestimated$kkodensitmoinsparc)
 ```
  cacaoyers par hectare .
 
-##Estimation de la biomasse aérienne
+##Estimation de la biomasse aérienne des cacaoyers (tonnes/hectare)
 
 La biomasse aérienne du cacaoyer, d'après le modèle de Zuidema et al.,(2005), représente 88.2% de la biomasse totale (d'après la compilation de différentes mesures effectuées au Brésil, Congo, Costa Rica, Malaysie, Nigeria et Vénézuela). 
 La régression logarithmique entre l'âge de l'arbre et la biomasse est, toujours d'après ce modèle physiologique : 
@@ -141,7 +139,7 @@ Carbonestimated$kkobiomasse<-((((9.35*log(Carbonestimated$age_champ)+7.87)*88.2)
 Une autre méthode pourrait être choisie: utiliser le package BIOMASS et prendre en compte également la hauteur des caacoyers qui est fonction de l'ombrage (20 à 25m sous ombrage fort contre 3 à 10m sous ombrage léger Van Vliet (2015)). 
 
 
-#Estimation de la biomasse totale et du carbone (Tonnes/hect) (arbres associés et cacaoyers)
+#Estimation de la biomasse totale et du carbone (Tonnes/hect) (arbres associés + cacaoyers)
 ```{r include=FALSE}
 Carbonestimated$biomtot<-Carbonestimated$biomhect+Carbonestimated$kkobiomasse
 Carbonestimated$carbontot<-Carbonestimated$biomtot/2
@@ -179,7 +177,7 @@ Pour indication, d'après Nijmeijer et al., (2017) une agroforêt à cacao camer
 
 Il convient de garder à l'esprit que l'estimation de biomasse aérienne des cacaoyers peut être sur-estimée dans notre étude: en effet les données d'observation sont issues de plantation ombragées. Dans ces conditions d'ombrage, les cacaoyers ont plus de biomasse que dans des conditions moins ombragées comme on l'observe plus couramment en Côte d'Ivoire. 
 
-#Estimation du carbone par type d'arbres
+#Estimation du carbone par type d'arbres(planté, recrû,...)
 
 ```{r include=FALSE}
 carbondata$meth_introsimp[carbondata$meth_intro == "1"] <- "1"
@@ -197,5 +195,275 @@ barplot(typsimp,names.arg=c("Planté","Recrû \n spontané","Maintenu \n au déf
 
 #Affiché en % du carbone total
 barplot(prop.table(typsimp)*100,names.arg=c("Planté","Recrû \n spontané","Maintenu \n au défrichement","Don \n certification"),space=0.5,main="Carbone total estimé \n par type de mode d'introduction de l'arbre",ylab="Carbone estimé (% carbone total)",xlab="Mode d'introduction",border=NA,col=grey.colors(4))
+rm("typsimp")
 ```
 
+```{r include=FALSE}
+#Calcul du carbone seulement pour les arbres plantés
+carbondata$carbon<-carbondata$AGB/2
+carbonpl<-subset(carbondata, meth_introsimp %in% c("1","2"))
+plotcarbpl<-as.data.frame(tapply(carbonpl$carbon,carbonpl$code,sum))
+#Il manque une parcelle
+```
+
+```{r include=FALSE}
+#Calcul du carbone seulement pour les arbres de recrû et de maintien au défrichement
+carbonrec<-subset(carbondata, meth_introsimp %in% c("5","3"))
+plotcarbrec<-as.data.frame(tapply(carbonrec$carbon,carbonrec$code,sum))
+#Calcul du carbone seulement pour les arbres de recrû spontané
+carbonrecsp<-subset(carbondata, meth_introsimp %in% c("3"))
+plotcarbrecsp<-as.data.frame(tapply(carbonrecsp$carbon,carbonrecsp$code,sum))
+```
+```{r include=FALSE}
+plotcarbpl$carbpl<-plotcarbpl[,1]
+plotcarbrec$carbrec<-plotcarbrec[,1]
+plotcarbrecsp$carbrecsp<-plotcarbrecsp[,1]
+```
+```{r include=FALSE}
+plotcarbpl$code<-rownames(plotcarbpl)
+plotcarbrec$code<-rownames(plotcarbrec)
+plotcarbrecsp$code<-rownames(plotcarbrecsp)
+Carbonestimated<-merge(Carbonestimated,plotcarbrec,"code",all=TRUE)
+Carbonestimated<-merge(Carbonestimated,plotcarbpl,"code",all=TRUE)
+Carbonestimated<-merge(Carbonestimated,plotcarbrecsp,"code",all=TRUE)
+Carbonestimated$`tapply(carbonrec$carbon, carbonrec$code, sum)`=NULL
+Carbonestimated$`tapply(carbonpl$carbon, carbonpl$code, sum)` =NULL
+Carbonestimated$`tapply(carbonrecsp$carbon, carbonrecsp$code, sum)`=NULL
+rm("carbonpl","carbonrec","plotcarbpl","plotcarbrec","plotcarbrecsp","carbonrecsp","APG","dataWD","Taxo","AGBtree")
+```
+
+
+#Covariance Carbone et déterminants environnementaux
+##Age
+
+```{r Covariance carbone age, include=FALSE}
+plot(Carbonestimated$age_champ,Carbonestimated$carbontot, main="Carbone total (tonne/hectare) par parcelle \n en fonction de l'âge du champ",xlab="Age du champ", ylab="Carbone (tonne/hectare)")
+```
+```{r include=FALSE}
+Carbonestimated$carbpl<-as.numeric(Carbonestimated$carbpl)
+Carbonestimated$carbpl<-Carbonestimated$carbpl/Carbonestimated$sup
+Carbonestimated$carbrec<-as.numeric(Carbonestimated$carbrec)
+Carbonestimated$carbrec<-Carbonestimated$carbrec/Carbonestimated$sup
+Carbonestimated$carbrecsp<-as.numeric(Carbonestimated$carbrecsp)
+Carbonestimated$carbrecsp<-Carbonestimated$carbrecsp/Carbonestimated$sup
+
+Carbonestimated<-Carbonestimated[!is.na(Carbonestimated$site),]
+Carbonestimated[is.na(Carbonestimated$carbpl),"carbpl"]<-0
+Carbonestimated[is.na(Carbonestimated$carbrec),"carbrec"]<-0
+Carbonestimated[is.na(Carbonestimated$carbrecsp),"carbrecsp"]<-0
+```
+
+```{r echo=FALSE}
+plot(Carbonestimated$age_champ,Carbonestimated$carbpl,main="Carbone stocké par les arbres plantés en fonction de l'âge du champ",xlab="Age du champ", ylab="Carbone (tonne/hectare)")
+```
+
+```{r echo=FALSE}
+plot(Carbonestimated$age_champ,Carbonestimated$carbrec, main="Carbone stocké par les arbres de recrû \n ou maintenus au défrichement en fonction de l'âge du champ",xlab="Age du champ", ylab="Carbone (tonne/hectare)")
+```
+```{r echo=FALSE}
+plot(Carbonestimated$age_champ,Carbonestimated$carbrecsp, main="Carbone stocké par les arbres de recrû spontanés \n en fonction de l'âge du champ", xlab="Age du champ", ylab="Carbone (tonne/hectare)")
+```
+
+##Occupation des sols
+###Bas fonds
+```{r echo=FALSE}
+plot(Carbonestimated$bf,Carbonestimated$carbrecsp, main="Proximité d'un bas fond et carbone recrû spontané", xlab="% occupé par un bas fond dans un rayon de 300m", ylab="Carbone (tonne/hectare)")
+```
+
+```{r echo=FALSE}
+plot(Carbonestimated$bf,Carbonestimated$carbrec, main="Proximité d'un bas fond et carbone recrû spontané et maintien au défrichement", xlab="% occupé par un bas fond dans un rayon de 300m", ylab="Carbone (tonne/hectare)")
+```
+
+
+```{r echo=FALSE}
+plot(Carbonestimated$bf,Carbonestimated$carbontot, main="Proximité d'un bas fond et carbone total", xlab="% occupé par un bas fond dans un rayon de 300m", ylab="Carbone (tonne/hectare)")
+```
+
+###Cacao
+La proximité d'une cacaoyère agroforestière pourrait permettre la diffusion de certaines espèces arborées repoussant spontanément dans les cacaoyères. Ainsi, les parcelles qui se situent au milieu d'un grand bloc de cacaoyères (comme on l'observe souvent) pourraient connaître un recrû spontané plus important et plus variés que celles situées à procximité de bas fonds ou de cultures permanentes. 
+
+```{r echo=FALSE}
+plot(Carbonestimated$kko,Carbonestimated$carbrecsp, main="Proximité de cacaoyère et carbone recrû spontané", xlab="% occupé par des cacaoyères dans un rayon de 300m", ylab="Carbone (tonne/hectare)")
+```
+
+```{r echo=FALSE}
+plot(Carbonestimated$kko,Carbonestimated$carbrec, main="Proximité des cacaoyères et carbone \n recrû spontané et maintien au défrichement", xlab="% occupé par des cacaoyères dans un rayon de 300m", ylab="Carbone (tonne/hectare)")
+```
+
+
+```{r echo=FALSE}
+plot(Carbonestimated$kko,Carbonestimated$carbontot, main="Proximité de cacaoyères et carbone total", xlab="% occupé par des cacaoyères dans un rayon de 300m", ylab="Carbone (tonne/hectare)")
+```
+
+###Forêt
+```{r echo=FALSE}
+plot(Carbonestimated$for.,Carbonestimated$carbrecsp, main="Proximité de forêts et carbone recrû spontané", xlab="% occupé par des forêts dans un rayon de 300m", ylab="Carbone (tonne/hectare)")
+```
+
+```{r echo=FALSE}
+plot(Carbonestimated$for.,Carbonestimated$carbrec, main="Proximité de forêts et carbone \n recrû spontané et maintien au défrichement", xlab="% occupé par des forêts dans un rayon de 300m", ylab="Carbone (tonne/hectare)")
+```
+
+```{r echo=FALSE}
+plot(Carbonestimated$for.,Carbonestimated$carbontot, main="Proximité de forêts et carbone total", xlab="% occupé par des forêts dans un rayon de 300m", ylab="Carbone (tonne/hectare)")
+```
+
+#Service diversité
+```{r abundance vector, include=FALSE}
+abdvec<-table(tree$nom_sc,tree$code)
+```
+
+```{r metacommunity creation, message=FALSE, warning=FALSE, include=FALSE}
+Metacom<-MetaCommunity(abdvec)
+```
+
+##Diversité Alpha, Bêta et Gamma pour q=0
+```{r alpha bêta and gamme div q0, echo=FALSE}
+#q0<-DivEst(0,Metacom)
+#save(q0,file="q0")
+load("q0")
+summary(q0)
+plot(q0)
+
+```
+
+```{r include=FALSE}
+q0div<-as.data.frame(q0$CommunityAlphaDiversities)
+#Il manque une parcelle, vérifier (136 au lieu de 137 dans plot)
+```
+
+##Diversité Alpha, Bêta et Gamma pour q=2
+
+```{r alpha bêta and gamme div q2, echo=FALSE}
+#q2<-DivEst(2,Metacom)
+#save(q2,file="q2")
+load("q2")
+summary(q2)
+plot(q2)
+
+```
+
+```{r include=FALSE}
+q2div<-as.data.frame(q2$CommunityAlphaDiversities)
+#Il manque une parcelle, vérifier (136 au lieu de 137 dans plot)
+```
+
+
+##Diversité Alpha, Bêta et Gamma pour les arbres spontanés
+
+```{r echo=FALSE}
+#treesp<-subset(tree, meth_intro %in% c("3"))
+#abdvecsp<-table(treesp$nom_sc,treesp$code)
+#Metacomsp<-MetaCommunity(abdvecsp)
+#q0sp<-DivEst(0,Metacomsp)
+#save(q0sp,file="q0sp")
+load("q0sp")
+plot(q0sp)
+```
+
+```{r include=FALSE}
+q0spdiv<-as.data.frame(q0sp$CommunityAlphaDiversities)
+```
+
+```{r include=FALSE}
+plot<-merge(Carbonestimated[,c("carbontot","carbrec","carbpl","carbrecsp","code")],plot,"code",all=TRUE)
+q0div$code<-rownames(q0div)
+q2div$code<-rownames(q2div)
+q0spdiv$code<-rownames(q0spdiv)
+q0div$q0al<-q0div$`q0$CommunityAlphaDiversities`
+q0div$`q0$CommunityAlphaDiversities`=NULL
+q2div$q2al<-q2div$`q2$CommunityAlphaDiversities`
+q2div$`q2$CommunityAlphaDiversities`=NULL
+q0spdiv$q0alsp<-q0spdiv$`q0sp$CommunityAlphaDiversities`
+q0spdiv$`q0sp$CommunityAlphaDiversities`=NULL
+plot<-merge(q0div,plot,"code")
+plot<-merge(q2div,plot,"code")
+plot<-merge(q0spdiv,plot,"code")
+```
+
+Observation de la covariance entre diversité et carbone: est-ce que plus la parcelle est diverse, plus elle stocke de carbone?
+
+```{r echo=FALSE}
+a<-lm(plot$q0al~plot$carbontot)
+summary(a)
+coeff=coefficients(a)
+eq=paste0("y=",round(coeff[2],1),"x +",round(coeff[1],1))
+plot(plot$carbontot,plot$q0al,abline(a,col="red"),main=eq,xlab= "carbone total (tonne/hectares)",ylab="Indice de diversité alpha d'ordre 0")
+```
+
+Observation de la covariance entre carbone stocké par le recrû spontané et diversité de ce recrû
+
+```{r echo=FALSE}
+a<-lm(plot$q0alsp~plot$carbrec)
+summary(a)
+coeff=coefficients(a)
+eq=paste0("y=",round(coeff[2],1),"x +",round(coeff[1],1))
+plot(plot$carbrec,plot$q0alsp,abline(a,col="red"),main=eq,xlab= "carbone arbres spontanés (tonne/hectares)",ylab="Indice de diversité alpha d'ordre 0 \n (arbres spontanés seulement")
+```
+
+
+#Covariance Diversité et déterminants environnementaux
+##Densité/Diversité
+```{r echo=FALSE}
+plot(plot$densit,plot$q0alsp,main="Relation entre densité et diversité", xlab="Densité totale (nb/arbres par hectare)", ylab="Indice de diversité alpha q=0")
+```
+
+##Age
+
+```{r Covariance carbone et age, echo=FALSE}
+plot(plot$age_champ,plot$q0al, main="Indice de diversité par parcelle \n en fonction de l'âge du champ",xlab="Age du champ", ylab="Indice de diversité alpha d'ordre 0")
+```
+
+```{r echo=FALSE}
+#c<-lm(plot$age_champ~plot$q0alsp)
+#summary(c)
+plot(plot$age_champ,plot$q0alsp,main="Indice de diversité (arbres spontanés) par parcelle \n en fonction de l'âge du champ",xlab="Age du champ", ylab="Indice de diversité alpha d'ordre 0")
+```
+
+##Occupation des sols: effet sur le recrû spontané
+###Bas fonds
+```{r echo=FALSE}
+plot(plot$bf,plot$q0alsp, main="Proximité d'un bas fond et diversité du recrû spontané", xlab="% occupé par un bas fond dans un rayon de 300m", ylab="Indice de diversité alpha q=0")
+```
+
+
+###Cacao
+```{r echo=FALSE}
+d<-lm(plot$q0alsp~plot$kko)
+summary(d)
+plot(plot$kko,plot$q0alsp,abline(d,col="red"),main="Proximité de cacaoyères et diversité du recrû spontané", xlab="% occupé par des cacaoyères dans un rayon de 300m", ylab="Indice de diversité alpha q=0")
+```
+
+###Forêt
+```{r echo=FALSE}
+plot(plot$for.,plot$q0alsp,main="Proximité de forêts et diversité du recrû spontané", xlab="% occupé par des forêts dans un rayon de 300m", ylab="Indice de diversité alpha q=0")
+```
+
+###Autres cultures permanentes en monoculture (palmier, hévéa, teck etc...)
+```{r echo=FALSE}
+a<-lm(plot$per~plot$q0alsp)
+plot(plot$per,plot$q0alsp,abline(a,col="red"),main="Proximité d'autres cultures permanentes et diversité du recrû spontané", xlab="% occupé par d'autres cultures permanentes dans un rayon de 300m", ylab="Indice de diversité alpha q=0")
+```
+
+##Relief
+
+###Altitude
+```{r echo=FALSE}
+plot(plot$altmx,plot$q0alsp,main="Relation entre diversité du recrû spontané et altitude", xlab="Altitude (m)", ylab="Indice de diversité alpha q=0")
+```
+
+###Pente
+```{r echo=FALSE}
+plot(plot$slope,plot$q0alsp,main="Relation entre diversité du recrû spontané et pente", xlab="Pente (%)", ylab="Indice de diversité alpha q=0")
+```
+
+#Conclusion
+Les éléments qui ont retenu mon attention:
+
+- la variable "kko" (% de superficie occupée par des cacaoyères dans un rayon de 300m autour de la parcelle inventoriée) semble covarier positivement avec la variable carbone total (carbontot) et la variable diversité alpha d'ordre 0 du recrû spontané (q0alsp). 
+
+- la variable "per" (% de superficie occupée par des cultures permanentes (monocultures) dans un rayon de 300m autour de la parcelle inventoriée) semble covarier négativement avec la variable diversité. 
+
+- distribution d'apparence normale autour de la variable altitude
+
+- pas d'effet apparent de la pente sur la diversité
