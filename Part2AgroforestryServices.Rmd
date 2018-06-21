@@ -13,12 +13,12 @@ library(BIOMASS)
 library(dplyr)
 library(ggplot)
 
-biom<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/data220218.csv")
+biom<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/data220218.csv",na.string="")
 str(biom)
 Arbres<-as.data.frame(unique(biom$nom_arb))
 library(dplyr)
 
-nomarb<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/nomarbtot220218.csv")
+nomarb<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/nomarbtot220218.csv",na.string="")
 
 biom2<-merge(biom,nomarb,by="nom_arb")
 
@@ -53,15 +53,25 @@ Genders<-as.data.frame(unique(biom2$Genre))
 Gendersfreq<-as.data.frame(table(biom2$Genre))
 
 #Nb of different species#
+Speciesvern<-as.data.frame(unique(biom2$nom_arb))
+Speciesvernfreq<-as.data.frame(table(biom2$nom_arb))
+
 Species <-as.data.frame(unique(biom2$nom_sc))
 Speciesfreq<-as.data.frame(table(biom2$nom_sc))
+
 ##Average Densities##
 str(biom2)
 library(ggplot2)
 min(biom2$densit)
 max(biom2$densit)
 hist(biom2$densit)
-plot(biom2$code,biom2$densit)
+
+Dens<-summarise(group_by(biom2,code),dens2=mean(densit))
+
+boxplot(Dens$dens2,main="Densité moyenne \n (Nbr arbres/hect)",col="darkgreen")
+hist(Dens$dens2, main= "Densités  (Nbr arbres/hect)",col="darkgreen",xlab="Densité",ylab="Nb de parcelles")
+mean(Dens$dens2)
+
 
 ##Average diversity##
 
@@ -225,13 +235,14 @@ step(lm,)
 ##SERVICE BOIS D'OEUVRE#
 
 ##Timber species##
-#ouverture des fichiers avec prise en compte des valeurs manquantes#
+#POUR LES 4 SITES:: ouverture des fichiers avec prise en compte des valeurs manquantes#
 timb<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/data4sit.csv")
 
 nomarb<-read.csv2("C:/Users/Elsa/Documents/Recherche/These/Datanalysis/ESThesis/nomarbtot220218.csv",na.string="")
 #ouverture des packages nécessaires#
 library(ggplot2)
 library(dplyr)
+library(ggrepel)
 
 #fusion des deux fichiers#
 timb2<-merge(timb,nomarb,by="nom_arb")
@@ -248,14 +259,16 @@ Tabesp3<-merge(Tabesp2,t,by="nom_arb")
 #création variable nom scientifique#
 Tabesp3$nom_sc<-paste(Tabesp3$Genre,Tabesp3$Espèce,sep=" ")
 
+table(timb2$timber)
+table(timb2$val)
 
 #Graphique bois oeuvre, fréquence, arbre#
-g<-ggplot(Tabesp3,aes(mT,Freq,color=timber,label=nom_sc))+
+g<-ggplot(Tabesp3,aes(mT,Freq,color=forafri,label=nom_sc))+
 scale_color_manual(values=c("gray3","red4"))+
 geom_point()+geom_text(hjust=-0.05,angle=45,check_overlap=TRUE,show.legend=FALSE,aes(fontface=3,size=3))+coord_trans(y="log2")
 g
 
-library(ggrepel)
+
 #Graphique bois oeuvre, fréquence#
 g1<-ggplot(Tabesp3,aes(timber,Freq,color=timber,label=nom_sc))+
 scale_color_manual(values=c(gray3","red4"))+
@@ -278,8 +291,10 @@ g3
 #Le bon graphique sans les valeurs manquantes#
 Tabesp4<-Tabesp3[!is.na(Tabesp3$timber),]
 str(Tabesp4)
+Tabesp4$val<-as.factor(Tabesp4$val)
+class(Tabesp4$val)
 
-g4<-ggplot(Tabesp4,aes(timber,Freq,color=timber,label=nom_sc))+
+g4<-ggplot(Tabesp4,aes(timber,Freq,color=timber,label=nom_sc,shape=val))+
 scale_color_manual(values=c("gray3","red4"))+
 geom_point()+geom_text_repel(show.legend=FALSE,size=3,aes(fontface=3))+coord_trans(y="log2")
 g4
@@ -293,6 +308,61 @@ geom_point()+geom_text_repel(show.legend=FALSE,aes(size=3,fontface=3))
 g5
 
 plot(timb2$timber,)
+
+
+#POUR TOUT l'EChantillon--------------------------------------------------#
+
+#ouverture des packages nécessaires#
+library(ggplot2)
+library(dplyr)
+library(ggrepel)
+
+#fusion des deux fichiers#
+timb2<-merge(biom,nomarb,by="nom_arb")
+Tabesp<-as.data.frame(table(timb2$nom_arb))
+Tabesp$nom_arb<-Tabesp$Var1
+Tabesp2<-merge(Tabesp,nomarb,by="nom_arb")
+
+
+#création d'une variable âge médian (mT)#
+t<-summarise(group_by(timb,nom_arb),mT=median(age_créat))
+
+Tabesp3<-merge(Tabesp2,t,by="nom_arb")
+
+#création variable nom scientifique#
+Tabesp3$nom_sc<-paste(Tabesp3$Genre,Tabesp3$Espèce,sep=" ")
+
+table(timb2$timber)
+table(timb2$val)
+
+#Graphique bois oeuvre, fréquence, arbre#
+g<-ggplot(Tabesp3,aes(mT,Freq,color=forafri,label=nom_sc))+
+scale_color_manual(values=c("gray3","red4"))+
+geom_point()+geom_text(hjust=-0.05,angle=45,check_overlap=TRUE,show.legend=FALSE,aes(fontface=3,size=3))+coord_trans(y="log2")
+g
+
+
+
+
+
+
+#graphqiue bois oeuvre, fréquence et visibilité de tous les noms sans échelle logarithmique#
+
+g3<-ggplot(Tabesp3,aes(timber,Freq,color=timber,label=nom_sc))+
+scale_color_manual(values=c("gray100","gray3","red4"))+
+geom_point()+geom_text_repel(show.legend=FALSE,aes(size=3,fontface=3))
+g3
+
+#Le bon graphique sans les valeurs manquantes#
+Tabesp4<-Tabesp3[!is.na(Tabesp3$forafri),]
+
+
+g4<-ggplot(Tabesp4,aes(forafri,Freq,color=forafri,label=nom_sc))+
+scale_color_manual(values=c("gray3","red4"))+
+geom_point()+geom_text_repel(show.legend=FALSE,size=3,aes(fontface=3))+coord_trans(y="log2")
+g4
+
+g4+ggtitle("Nombre d'individus recensés \n(essences commercialisables et non commercialisables)")+xlab("Type de bois")+ylab("Nombre d'individus")+scale_x_discrete(breaks=c("non","oui"),labels=c("Non commercialisable","Commercialisable"))+theme(legend.position='none',plot.title=element_text(size=20),axis.title.x=element_text(size=14),axis.title.y=element_text(size=14),axis.text.x=element_text(size=12))
 
 
 
@@ -355,6 +425,16 @@ spectr3$sempstrict<-ifelse(spectr3$forsemp==1&spectr3$sorsemptrans==0,1,0)
 sum(spectr3$sempstrict,na.rm=TRUE)
 sum(spectr3$sempstrict*spectr3$Freq,na.rm=TRUE)
 
+##script graph age##
+couleur2=biom$age_arb_age_champ
+plot(jitter(biom$age_champ,factor=5),jitter(biom$age_créat,factor=5),main="Comparaison de l'âge des arbres et de l'âge des parcelles",
+     xlab="Age de la parcelle sur laquelle est situé l'arbre",ylab="Age de l'arbre",
+     cex=0.5,pch=16,
+     xaxp=c(0,70,14),
+     yaxp=c(0,70,14),
+     col=couleur2,sub="Sources: inventaires botaniques Sanial 2016")
+class(biom$age_créat)
+str(biom$age_créat)
 
 
 

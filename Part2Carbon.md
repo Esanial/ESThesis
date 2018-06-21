@@ -78,6 +78,7 @@ La densité de cacaoyers n'a pas été mesurée sur les parcelles inventoriées.
 
 Toutefois, je dispose d'un jeu de données constitué lors de mon Master 2 (avec IDH/CIRAD/ALP). J'avais mesuré les densités de cacaoyers sur 61 parcelles de 12 à 52 ans dans l'ouest ivoirien. Sur chaque parcelle, les cacaoyers ont été comptés dans 4 carrés de 100m² (Sanial, 2015, Ruf et al., 2015). J'ai ensuite calculé la densité moyenne de ces 4 carrés pour chaque parcelle. 
 Dans ce jeu de données, la relation entre âge du champ et densité peut s'écrire selon l'équation linéaire suivante : -0.15x+19.5
+NB: Prendre plutôt le modèle lognormal -4.509ln(x)+29.97
 
 Ainsi, j'ai pu estimer la densité des cacaoyers en fonction de l'âge pour chacune des parcelles inventoriées dans le cadre de me thèse. 
 
@@ -85,24 +86,25 @@ Ainsi, j'ai pu estimer la densité des cacaoyers en fonction de l'âge pour chac
 ```r
 #Ajout du cacao#
 Carbonestimated<-merge(Carbonestimated,plot,"code")
-Carbonestimated$kkodensit<-(((-0.15*Carbonestimated$age_champ)+19.5)*100)
+#Carbonestimated$kkodensit<-(((-0.15*Carbonestimated$age_champ)+19.5)*100)
+Carbonestimated$kkodensit<-(((-4.509*log(Carbonestimated$age_champ))+29.9)*100)
 ```
 
 L'estimation de la densité moyenne des cacaoyers (nbr cacaoyers/hectares) (
-[1] 1550.27
+[1] 1588.314
 ) est supérieure à ce qui a été mesuré par Stemler (2012): 1100 cacaoyers/hectares dans le sud Ivoirien. 
 
 Toutefois, lors des inventaires botaniques, les portions de la parcelle n'ayant pas de cacaoyers ont été cartographiées au GPS. Cela permet de connaître le pourcentage d'espaces vides de cacaoyers par rapport à la superficie totale inventoriée. Une fois ce pourcentage pris en compte on obtient une densité de cacaoyers à l'hectare plus faible avec une moyenne de:
 
 
-[1] 1441.715
+[1] 1477.866
  cacaoyers par hectare .
 
 ##Estimation de la biomasse aérienne des cacaoyers (tonnes/hectare)
 
 La biomasse aérienne du cacaoyer, d'après le modèle de Zuidema et al.,(2005), représente 88.2% de la biomasse totale (d'après la compilation de différentes mesures effectuées au Brésil, Congo, Costa Rica, Malaysie, Nigeria et Vénézuela). 
 La régression logarithmique entre l'âge de l'arbre et la biomasse est, toujours d'après ce modèle physiologique : 
-9.35ln(x)+7.88. 
+8.46ln(x)+9.40. 
 
 J'utilise cette équation pour estimer la biomasse des cacaoyers en prenant en compte l'âge de la plantation (compris ici, de manière schématique comme l'âge du cacaoyer). 
 
@@ -110,7 +112,7 @@ On obtient ainsi la biomasse totale. Pour obtenir une estimation de la biomasse 
 
 
 ```r
-Carbonestimated$kkobiomasse<-((((9.35*log(Carbonestimated$age_champ)+7.87)*88.2)/100)*Carbonestimated$kkodensitmoinsparc)/1000
+Carbonestimated$kkobiomasse<-((((8.46*log(Carbonestimated$age_champ)+9.4)*88.2)/100)*Carbonestimated$kkodensitmoinsparc)/1000
 #Limite de ce calcul: les données sont prises sur des plantations ombragées, donc avec plus de biomasse cacaoyère. 
 ```
 
@@ -123,43 +125,43 @@ Une autre méthode pourrait être choisie: utiliser le package BIOMASS et prendr
 
 ```
 ##    code     densit    biomhect kkobiomasse   biomtot carbontot
-## 1   32A  59.154096  81.8021298    45.95155 127.75368  63.87684
-## 2  32AA  22.320000  15.0925982    46.90852  62.00112  31.00056
-## 3  32AC  46.500000  45.7471246    46.84866  92.59578  46.29789
-## 4  32AD  68.300000  72.3558904    49.68699 122.04288  61.02144
-## 5   32B  29.781602  54.9290289    50.91044 105.83947  52.91974
-## 6   32C  69.406393  42.8271867    49.95687  92.78406  46.39203
-## 7   32D  21.673891  28.1270110    50.63881  78.76582  39.38291
-## 8   32G 218.403151 100.8940709    45.47158 146.36565  73.18283
-## 9   32I  59.128930  63.4311049    42.87058 106.30168  53.15084
-## 10  32J  74.503960  48.1523417    50.42678  98.57912  49.28956
-## 11  32K  57.503394  53.2834502    44.85923  98.14268  49.07134
-## 12  32L 231.670755  65.1969879    43.35478 108.55177  54.27588
-## 13  32M  29.290519  25.9020343    48.75962  74.66165  37.33083
-## 14  32W  33.330000  14.8287012    39.20626  54.03496  27.01748
-## 15   3A  32.213845  60.2944828    50.63368 110.92817  55.46408
-## 16   3B  36.287509  36.5296535    45.58909  82.11874  41.05937
-## 17   3C  12.181617  15.0600924    48.17897  63.23907  31.61953
-## 18   3I  58.474576  64.7714474    42.70840 107.47984  53.73992
-## 19  82A  46.533827  33.2744159    43.66662  76.94104  38.47052
-## 20 82AA  18.759019  13.4592073    50.91044  64.36965  32.18482
-## 21 82AB  38.613081  75.2015512    48.47744 123.67899  61.83950
-## 22  82G  67.796610  41.0267310    41.43940  82.46613  41.23306
-## 23  82H 106.106106 102.8630352    43.98797 146.85101  73.42550
-## 24  82I  25.900000  13.7778334    41.14169  54.91952  27.45976
-## 25  82K  25.470000  18.7186091    48.44805  67.16666  33.58333
-## 26  82L  13.595482   2.1390955    47.82532  49.96442  24.98221
-## 27  82M  12.708787  23.1690798    46.61521  69.78429  34.89214
-## 28  82N  48.171793  21.4773307    42.30204  63.77937  31.88968
-## 29   8B  20.184136  55.5057279    38.38494  93.89066  46.94533
-## 30   8D  38.374718  34.3022873    50.12765  84.42994  42.21497
-## 31   8E  37.011173  59.9484024    47.94859 107.89699  53.94850
-## 32   8G  24.261603  32.5565073    51.17198  83.72849  41.86424
-## 33   8K   2.678571   0.6021546    40.71755  41.31970  20.65985
-## 34   8L  37.922317  20.7008641    41.47769  62.17855  31.08928
-## 35  8Ma 112.513304  28.5589113    45.27390  73.83281  36.91641
-## 36  8Mb 123.499142  76.8079087    39.38792 116.19583  58.09792
-## 37   8P  15.885316   7.4132162    45.30376  52.71698  26.35849
+## 1   32A  59.154096  81.8021298    42.89466 124.69679  62.34839
+## 2  32AA  22.320000  15.0925982    44.19060  59.28319  29.64160
+## 3  32AC  46.500000  45.7471246    43.73516  89.48228  44.74114
+## 4  32AD  68.300000  72.3558904    46.54409 118.89998  59.44999
+## 5   32B  29.781602  54.9290289    47.56529 102.49432  51.24716
+## 6   32C  69.406393  42.8271867    46.87194  89.69913  44.84956
+## 7   32D  21.673891  28.1270110    47.32555  75.45256  37.72628
+## 8   32G 218.403151 100.8940709    42.49641 143.39048  71.69524
+## 9   32I  59.128930  63.4311049    40.59528 104.02638  52.01319
+## 10  32J  74.503960  48.1523417    47.17518  95.32752  47.66376
+## 11  32K  57.503394  53.2834502    42.08909  95.37254  47.68627
+## 12  32L 231.670755  65.1969879    41.77918 106.97617  53.48809
+## 13  32M  29.290519  25.9020343    45.53706  71.43909  35.71955
+## 14  32W  33.330000  14.8287012    41.76096  56.58966  28.29483
+## 15   3A  32.213845  60.2944828    47.60148 107.89596  53.94798
+## 16   3B  36.287509  36.5296535    42.70540  79.23505  39.61753
+## 17   3C  12.181617  15.0600924    45.28921  60.34930  30.17465
+## 18   3I  58.474576  64.7714474    39.95449 104.72594  52.36297
+## 19  82A  46.533827  33.2744159    47.37961  80.65403  40.32701
+## 20 82AA  18.759019  13.4592073    47.56529  61.02450  30.51225
+## 21 82AB  38.613081  75.2015512    48.39398 123.59553  61.79776
+## 22  82G  67.796610  41.0267310    45.92937  86.95610  43.47805
+## 23  82H 106.106106 102.8630352    42.06054 144.92357  72.46179
+## 24  82I  25.900000  13.7778334    46.74382  60.52165  30.26083
+## 25  82K  25.470000  18.7186091    48.85914  67.57775  33.78887
+## 26  82L  13.595482   2.1390955    48.78270  50.92179  25.46090
+## 27  82M  12.708787  23.1690798    48.15822  71.32730  35.66365
+## 28  82N  48.171793  21.4773307    45.89900  67.37633  33.68817
+## 29   8B  20.184136  55.5057279    36.57459  92.08032  46.04016
+## 30   8D  38.374718  34.3022873    48.22328  82.52556  41.26278
+## 31   8E  37.011173  59.9484024    48.35544 108.30384  54.15192
+## 32   8G  24.261603  32.5565073    49.22793  81.78443  40.89222
+## 33   8K   2.678571   0.6021546    46.26192  46.86408  23.43204
+## 34   8L  37.922317  20.7008641    42.49344  63.19430  31.59715
+## 35  8Ma 112.513304  28.5589113    48.22397  76.78288  38.39144
+## 36  8Mb 123.499142  76.8079087    39.32011 116.12802  58.06401
+## 37   8P  15.885316   7.4132162    47.47934  54.89255  27.44628
 ```
 
 ```r
@@ -175,15 +177,15 @@ boxplot(Carbonestimated$carbontot,main="Tonne de carbone/hect")
 ![](Part2Carbon_files/figure-html/unnamed-chunk-10-2.png)<!-- -->
 
 Les parcelles étudiées stockent de
-[1] 20.65985
+[1] 23.43204
 à
-[1] 73.4255
+[1] 72.46179
 tonnes de carbone par hectare (cacaoyers+arbres associés). 
 
 En moyenne on estime 
-[1] 43.89591
+[1] 43.55096
 (sd
-[1] 13.44057
+[1] 12.74707
 ) tonnes de carbone/hectare. 
 
 Pour indication, d'après Nijmeijer et al., (2017) une agroforêt à cacao camerounaise stocke en moyenne 72 tonnes par hectare (sd 8). 
@@ -390,19 +392,19 @@ Observation de la covariance entre diversité et carbone: est-ce que plus la par
 ## 
 ## Residuals:
 ##      Min       1Q   Median       3Q      Max 
-## -15.2784  -5.1382  -0.4708   5.5513  23.1210 
+## -16.1730  -5.3959  -0.5101   5.7214  23.4149 
 ## 
 ## Coefficients:
 ##                Estimate Std. Error t value Pr(>|t|)  
-## (Intercept)      7.8691     5.1162   1.538   0.1339  
-## plot$carbontot   0.2235     0.1088   2.054   0.0482 *
+## (Intercept)      5.0269     4.8587   1.035   0.3079  
+## plot$carbontot   0.2780     0.1072   2.594   0.0138 *
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
-## Residual standard error: 8.24 on 32 degrees of freedom
-##   (95 observations deleted due to missingness)
-## Multiple R-squared:  0.1165,	Adjusted R-squared:  0.08891 
-## F-statistic:  4.22 on 1 and 32 DF,  p-value: 0.04819
+## Residual standard error: 8.198 on 35 degrees of freedom
+##   (100 observations deleted due to missingness)
+## Multiple R-squared:  0.1612,	Adjusted R-squared:  0.1373 
+## F-statistic: 6.728 on 1 and 35 DF,  p-value: 0.01377
 ```
 
 ![](Part2Carbon_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
@@ -427,7 +429,7 @@ Observation de la covariance entre carbone stocké par le recrû spontané et di
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## Residual standard error: 6.732 on 32 degrees of freedom
-##   (95 observations deleted due to missingness)
+##   (103 observations deleted due to missingness)
 ## Multiple R-squared:  0.3022,	Adjusted R-squared:  0.2804 
 ## F-statistic: 13.86 on 1 and 32 DF,  p-value: 0.0007574
 ```
@@ -469,7 +471,7 @@ Observation de la covariance entre carbone stocké par le recrû spontané et di
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## Residual standard error: 6.301 on 85 degrees of freedom
-##   (42 observations deleted due to missingness)
+##   (50 observations deleted due to missingness)
 ## Multiple R-squared:  0.1849,	Adjusted R-squared:  0.1753 
 ## F-statistic: 19.28 on 1 and 85 DF,  p-value: 3.237e-05
 ```
@@ -480,17 +482,21 @@ Observation de la covariance entre carbone stocké par le recrû spontané et di
 ![](Part2Carbon_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
 
 ###Autres cultures permanentes en monoculture (palmier, hévéa, teck etc...)
+
 ![](Part2Carbon_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
 
 ##Relief
 
 ###Altitude
+
 ![](Part2Carbon_files/figure-html/unnamed-chunk-47-1.png)<!-- -->
 
 ###Pente
+
 ![](Part2Carbon_files/figure-html/unnamed-chunk-48-1.png)<!-- -->
 
 #Conclusion
+
 Les éléments qui ont retenu mon attention:
 
 - la variable "kko" (% de superficie occupée par des cacaoyères dans un rayon de 300m autour de la parcelle inventoriée) semble covarier positivement avec la variable carbone total (carbontot) et la variable diversité alpha d'ordre 0 du recrû spontané (q0alsp). 
@@ -500,3 +506,274 @@ Les éléments qui ont retenu mon attention:
 - distribution d'apparence normale autour de la variable altitude
 
 - pas d'effet apparent de la pente sur la diversité
+
+#Valeurs d'usage
+
+
+Méthode: Lors des inventaires botaniques les usages faits des arbres par le propriétaire du champ ont été relevés. Ceux qui sont traités dans cette partie sont les principaux à savoir: 
+alimentaire (domestique et commercial), bois d'oeuvre (domestique et commercial), service agronomique aux cacaoyers (fertilisation, ombrage,...), symbolique (spirituel, beauté, mémoire de pratiques traditionnelles), médicinal, tuteur pour l'igname, fourrage, artisanat et latex. 
+
+Ainsi, un Akpi peut être utilisé par un Baoulé comme arbre alimentaire et par un autre planteur comme arbre médicinal et enfin par un troisième comme futur arbre à bois. 
+Ainsi, un même arbre peut avoir différents usages d'une parcelle à l'autre ou cumuler plusieurs usages sur une même parcelle. 
+
+Deux valeurs d'usage ont été attribuées aux parcelles: 
+
+- une première, appelée "valeur d'usages réels" fait la somme des usages qui sont faits pour chaque arbre. Par exemple un Akpi utilisé par un planteur comme arbre alimentaire et médicinal aurait une note de 2.
+Ces valeurs sont ensuite additionnées pour obtenir une note à l'échelle de la parcelle. Cette note est ensuite pondérée par la supercifie. On obtient donc un nombre d'usages (correspond donc à la somme des usages/arbres) par hectare. 
+Cette note d'usage réelle reflète les connaissances et les pratiques des producteurs. Elle peut également être déclinée par type d'usage. Par exemple, chaque parcelle peut avoir une valeur correspondant au % d'arbres alimentaires sur le total des usages recensés sur cette même parcelle. Cela permet d'identifier certaines spécialisations.
+
+- La deuxième valeur est appelée "valeur d'usages potentiels". Elle représente la somme des usages qui pourraient être faits sur une parcelle à partir de tous les usages recensés pour une essence donnée. 
+Par exemple, l'Akpi fait l'objet de 4 usages différents: alimentaire, médicinal, service agronomique aux cacaoyers et bois d'oeuvre. Systèmatiquement, cet arbre a une valeur de 4. 
+Certains producteurs ont des arbres qui peuvent faire l'objet d'usages médicinaux qu'ils ne connaissent pas mais qui sont pratiqués par d'autres producteurs. Cette note de valeur d'usages potentiels reflète la diversité des arbres introduits et peut également être déclinée par type d'usages.
+
+Dans cette partie, les services environnementaux mesurés (carbone et diversité) sont confrontés à ces différents usages. L'objectif étant d'identifier les usages qui permettent de maximiser chacun de ces services et un compromis entre diversité d'usages, biodiversité et stockage de carbone. 
+
+Pour l'instant, la méthode est plutôt descriptive et mérite d'être affinée. 
+
+##Valeurs d'usages réels (totales et par type d'usages)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-53-1.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-53-2.png)<!-- -->
+
+Relation entre diversité et type d'usages (nbr d'arbres/hect):
+
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-55-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-56-1.png)<!-- -->
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-57-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-58-1.png)<!-- -->
+
+Relation entre diversité et type d'usages (% arbres d'un usage donné sur l'ensemble des arbres):
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-59-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-60-1.png)<!-- -->
+
+
+###Quelle est la spécialisation réelle qui maximise la diversité (à l'échelle de la parcelle)?  
+
+
+
+
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-63-1.png)<!-- -->
+
+
+
+Comparaison des différents usages:
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-64-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-65-1.png)<!-- -->
+
+###Quelle est la spécialisation réelle qui maximise le nombre d'arbres/hect (à l'échelle de la parcelle)?
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-66-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-67-1.png)<!-- -->
+
+###Quelle est la spécialisation réelle qui maximise la biomasse (à l'échelle de la parcelle)?
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-68-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-69-1.png)<!-- -->
+
+##Identification des arbres multifonctionnels (cumulant plusieurs utilisations possibles)
+
+
+
+Les arbres multifonctionnels (au moins deux usages pratiqués sur la même parcelle):
+
+
+```
+##               Genre         Espèce
+## 35       Anthonotha       fragrans
+## 40        Heritiera         utilis
+## 50        Spathodea    campanulata
+## 51         Vernonia       colorata
+## 53           Acacia        mangium
+## 58         Antiaris       africana
+## 59    Ricinodendron     heudelotii
+## 60            Ficus       capensis
+## 61       Anacardium    occidentale
+## 63       Artocarpus        altilis
+## 64           Persea      americana
+## 65          Lophira          alata
+## 67       Andansonia       digitata
+## 74         Mansonia      altissima
+## 79                                
+## 82          Xylopia     aethiopica
+## 83           Citrus          limon
+## 84           Cassia         siamea
+## 85            Cocos       nucifera
+## 86             Cola         nitida
+## 88           Annona       muricata
+## 89  Piptadeniastrum      africanum
+## 92            Ficus        goliath
+## 94           Celtis    mildbraedii
+## 97            Ficus         mucoso
+## 100        Alstonia         boonei
+## 101                               
+## 104       Diospyros     macrocarpa
+## 107      Strombosia      pustulata
+## 108           Ficus               
+## 109        Monodora      myristica
+## 110      Terminalia        superba
+## 111      Terminalia      ivorensis
+## 112           Ceiba      pentandra
+## 113         Blighia         sapida
+## 116       Rauwolfia       vomitora
+## 117    Margaritaria      discoidea
+## 120      Gliricidia         sepium
+## 127         Psidium        guajava
+## 130           Hevea   brasiliensis
+## 132      Pycnanthus      angolense
+## 133         Milicia        excelsa
+## 134           Morus      mesozygia
+## 138                               
+## 145    Nesogordonia     papavifera
+## 146       Pterygota     macrocarpa
+## 147       Sterculia    tragacantha
+## 151         Morinda         lucida
+## 153        Albizzia          zygia
+## 154        Amphimas pterocarpoides
+## 155          Lannea     welwitchii
+## 157          Citrus      tachibana
+## 158       Mangifera         indica
+## 160        Spondias         monbin
+## 161         Moringa       oleifera
+## 163          Parkia      biglobosa
+## 172          Citrus       sinensis
+## 176          Citrus         maxima
+## 178         Musanga   cecropioides
+## 182       Picralima         nitida
+## 183        Glyphaea         brevis
+## 184      Afrormosia      laxiflora
+## 185        Funtumia       elastica
+## 186        Syzygium     malaccense
+## 187          Bombax   buonopozense
+## 188          Parkia        bicolor
+## 191        Bridelia     ferruginea
+## 192    Triplochiton    scleroxylon
+## 195           Trema     orientalis
+## 196 Entandrophragma          utile
+## 199      Tamarindus         indica
+## 200         Tectona        grandis
+## 202 Entandrophragma      angolense
+## 203                               
+## 205      Myrianthus       arboreus
+## 207      Newbouldia         laevis
+## 208        Treculia       africana
+## 213    Anthocleista        nobilis
+## 215           Ficus     exasperata
+```
+
+##Valeurs d'usages potentiels
+
+
+
+
+
+
+
+
+
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-76-1.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-76-2.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-76-3.png)<!-- -->
+
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-78-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-79-1.png)<!-- -->
+
+
+
+```
+## `geom_smooth()` using method = 'loess'
+```
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-80-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-81-1.png)<!-- -->
+
+
+```
+## `geom_smooth()` using method = 'loess'
+```
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-82-1.png)<!-- -->
+
+
+```
+## `geom_smooth()` using method = 'loess'
+```
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-83-1.png)<!-- -->
+
+
+###Quelle est la spécialisation potentielle qui pourrait maximiser la diversité (à l'échelle de la parcelle)?  
+
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-85-1.png)<!-- -->
+
+
+
+```
+## `geom_smooth()` using method = 'loess'
+## `geom_smooth()` using method = 'loess'
+## `geom_smooth()` using method = 'loess'
+## `geom_smooth()` using method = 'loess'
+## `geom_smooth()` using method = 'loess'
+```
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-86-1.png)<!-- -->
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-87-1.png)<!-- -->
+
+###Quelle est la spécialisation potentielle qui pourrait maximiser le nombre d'arbres/hect?
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-88-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-89-1.png)<!-- -->
+
+###Quelle est la spécialisation potentielle qui pourrait maximiser la biomasse (à l'échelle de la parcelle)?
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-90-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-91-1.png)<!-- -->
+
+#Conclusion
+
+Arbres médicinaux et arbres fournissant un service agronomique aux cacaoyers semblent être ceux qui introduisent plus de diversité dans les parcelles. A l'inverse, arbres alimentaires sont moins divers mais induisent de plus fortes densités d'arbres à l'hectare. Enfin, les arbres à bois induisent de faibles densités à l'hectare mais une biomasse souvent importante. 
+
+Ces analyses doivent maintenant être incluses dans des approches multivariées plus fidèles à la réalité. En effet, il y a deux limites à ces graphiques: 
+
+- régression de loess: très fluctuantes et peu lisibles
+
+- régression linéaire : elles tendent vers l'infini ce qui n'est pas réaliste et elles ont des intervals de confiance très étendu, témoignant d'une inadéquation du modèle au phénomène. 
+
+Il faudrait également pondérer ces analyses par la densité. Ex: une parcelle avec seulement 3 arbres/hectare qui sont 3 arbres à bois va présenter 100% d'arbres à bois mais une très faible diversité. Ainsi, elle introduit un biais dans l'analyse. Cette parcelle existe et explique la chute de la courbe de loess représentant l'usage bois d'oeuvre sur le graphique diversité. 
+

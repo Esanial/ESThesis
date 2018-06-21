@@ -78,7 +78,7 @@ plot$biomhect<-(plot$ABGplot/plot$sup)
 
 ```{r echo=FALSE}
 names<-plot$code
-plot(plot$densit,plot$biomhect)+
+plot(plot$densit,plot$biomhect, main="Relation entre biomasse et densité des arbres associés", xlab="Densité (nbr d'arbres/hect)",ylab="Biomasse (tonnes/hect)")+
 text(plot$densit,plot$biomhect,names,col=(plot$age_champ))
 rm("names")
 ```
@@ -96,13 +96,15 @@ La densité de cacaoyers n'a pas été mesurée sur les parcelles inventoriées.
 
 Toutefois, je dispose d'un jeu de données constitué lors de mon Master 2 (avec IDH/CIRAD/ALP). J'avais mesuré les densités de cacaoyers sur 61 parcelles de 12 à 52 ans dans l'ouest ivoirien. Sur chaque parcelle, les cacaoyers ont été comptés dans 4 carrés de 100m² (Sanial, 2015, Ruf et al., 2015). J'ai ensuite calculé la densité moyenne de ces 4 carrés pour chaque parcelle. 
 Dans ce jeu de données, la relation entre âge du champ et densité peut s'écrire selon l'équation linéaire suivante : -0.15x+19.5
+NB: Prendre plutôt le modèle lognormal -4.509ln(x)+29.97
 
 Ainsi, j'ai pu estimer la densité des cacaoyers en fonction de l'âge pour chacune des parcelles inventoriées dans le cadre de me thèse. 
 
 ```{r Densite moy sur les parcelles, echo=TRUE, message=FALSE, warning=FALSE}
 #Ajout du cacao#
 Carbonestimated<-merge(Carbonestimated,plot,"code")
-Carbonestimated$kkodensit<-(((-0.15*Carbonestimated$age_champ)+19.5)*100)
+#Carbonestimated$kkodensit<-(((-0.15*Carbonestimated$age_champ)+19.5)*100)
+Carbonestimated$kkodensit<-(((-4.509*log(Carbonestimated$age_champ))+29.9)*100)
 ```
 
 L'estimation de la densité moyenne des cacaoyers (nbr cacaoyers/hectares) (
@@ -125,14 +127,14 @@ mean(Carbonestimated$kkodensitmoinsparc)
 
 La biomasse aérienne du cacaoyer, d'après le modèle de Zuidema et al.,(2005), représente 88.2% de la biomasse totale (d'après la compilation de différentes mesures effectuées au Brésil, Congo, Costa Rica, Malaysie, Nigeria et Vénézuela). 
 La régression logarithmique entre l'âge de l'arbre et la biomasse est, toujours d'après ce modèle physiologique : 
-9.35ln(x)+7.88. 
+8.46ln(x)+9.40. 
 
 J'utilise cette équation pour estimer la biomasse des cacaoyers en prenant en compte l'âge de la plantation (compris ici, de manière schématique comme l'âge du cacaoyer). 
 
 On obtient ainsi la biomasse totale. Pour obtenir une estimation de la biomasse aérienne pour chaque cacaoyer, il faut prendre 88.2% de la biomasse totale.
 
 ```{r calcul de la biomasse modele de Zuidema, echo=TRUE}
-Carbonestimated$kkobiomasse<-((((9.35*log(Carbonestimated$age_champ)+7.87)*88.2)/100)*Carbonestimated$kkodensitmoinsparc)/1000
+Carbonestimated$kkobiomasse<-((((8.46*log(Carbonestimated$age_champ)+9.4)*88.2)/100)*Carbonestimated$kkodensitmoinsparc)/1000
 #Limite de ce calcul: les données sont prises sur des plantations ombragées, donc avec plus de biomasse cacaoyère. 
 ```
 
@@ -376,9 +378,9 @@ q2div$q2al<-q2div$`q2$CommunityAlphaDiversities`
 q2div$`q2$CommunityAlphaDiversities`=NULL
 q0spdiv$q0alsp<-q0spdiv$`q0sp$CommunityAlphaDiversities`
 q0spdiv$`q0sp$CommunityAlphaDiversities`=NULL
-plot<-merge(q0div,plot,"code")
-plot<-merge(q2div,plot,"code")
-plot<-merge(q0spdiv,plot,"code")
+plot<-merge(q0div,plot,"code",all=TRUE)
+plot<-merge(q2div,plot,"code",all=TRUE)
+plot<-merge(q0spdiv,plot,"code",all=TRUE)
 ```
 
 Observation de la covariance entre diversité et carbone: est-ce que plus la parcelle est diverse, plus elle stocke de carbone?
@@ -440,6 +442,7 @@ plot(plot$for.,plot$q0alsp,main="Proximité de forêts et diversité du recrû s
 ```
 
 ###Autres cultures permanentes en monoculture (palmier, hévéa, teck etc...)
+
 ```{r echo=FALSE}
 a<-lm(plot$per~plot$q0alsp)
 plot(plot$per,plot$q0alsp,abline(a,col="red"),main="Proximité d'autres cultures permanentes et diversité du recrû spontané", xlab="% occupé par d'autres cultures permanentes dans un rayon de 300m", ylab="Indice de diversité alpha q=0")
@@ -448,16 +451,19 @@ plot(plot$per,plot$q0alsp,abline(a,col="red"),main="Proximité d'autres cultures
 ##Relief
 
 ###Altitude
+
 ```{r echo=FALSE}
 plot(plot$altmx,plot$q0alsp,main="Relation entre diversité du recrû spontané et altitude", xlab="Altitude (m)", ylab="Indice de diversité alpha q=0")
 ```
 
 ###Pente
+
 ```{r echo=FALSE}
 plot(plot$slope,plot$q0alsp,main="Relation entre diversité du recrû spontané et pente", xlab="Pente (%)", ylab="Indice de diversité alpha q=0")
 ```
 
 #Conclusion
+
 Les éléments qui ont retenu mon attention:
 
 - la variable "kko" (% de superficie occupée par des cacaoyères dans un rayon de 300m autour de la parcelle inventoriée) semble covarier positivement avec la variable carbone total (carbontot) et la variable diversité alpha d'ordre 0 du recrû spontané (q0alsp). 
@@ -467,3 +473,904 @@ Les éléments qui ont retenu mon attention:
 - distribution d'apparence normale autour de la variable altitude
 
 - pas d'effet apparent de la pente sur la diversité
+
+#Valeurs d'usage
+
+
+Méthode: Lors des inventaires botaniques les usages faits des arbres par le propriétaire du champ ont été relevés. Ceux qui sont traités dans cette partie sont les principaux à savoir: 
+alimentaire (domestique et commercial), bois d'oeuvre (domestique et commercial), service agronomique aux cacaoyers (fertilisation, ombrage,...), symbolique (spirituel, beauté, mémoire de pratiques traditionnelles), médicinal, tuteur pour l'igname, fourrage, artisanat et latex. 
+
+Ainsi, un Akpi peut être utilisé par un Baoulé comme arbre alimentaire et par un autre planteur comme arbre médicinal et enfin par un troisième comme futur arbre à bois. 
+Ainsi, un même arbre peut avoir différents usages d'une parcelle à l'autre ou cumuler plusieurs usages sur une même parcelle. 
+
+Deux valeurs d'usage ont été attribuées aux parcelles: 
+
+- une première, appelée "valeur d'usages réels" fait la somme des usages qui sont faits pour chaque arbre. Par exemple un Akpi utilisé par un planteur comme arbre alimentaire et médicinal aurait une note de 2.
+Ces valeurs sont ensuite additionnées pour obtenir une note à l'échelle de la parcelle. Cette note est ensuite pondérée par la supercifie. On obtient donc un nombre d'usages (correspond donc à la somme des usages/arbres) par hectare. 
+Cette note d'usage réelle reflète les connaissances et les pratiques des producteurs. Elle peut également être déclinée par type d'usage. Par exemple, chaque parcelle peut avoir une valeur correspondant au % d'arbres alimentaires sur le total des usages recensés sur cette même parcelle. Cela permet d'identifier certaines spécialisations.
+
+- La deuxième valeur est appelée "valeur d'usages potentiels". Elle représente la somme des usages qui pourraient être faits sur une parcelle à partir de tous les usages recensés pour une essence donnée. 
+Par exemple, l'Akpi fait l'objet de 4 usages différents: alimentaire, médicinal, service agronomique aux cacaoyers et bois d'oeuvre. Systèmatiquement, cet arbre a une valeur de 4. 
+Certains producteurs ont des arbres qui peuvent faire l'objet d'usages médicinaux qu'ils ne connaissent pas mais qui sont pratiqués par d'autres producteurs. Cette note de valeur d'usages potentiels reflète la diversité des arbres introduits et peut également être déclinée par type d'usages.
+
+Dans cette partie, les services environnementaux mesurés (carbone et diversité) sont confrontés à ces différents usages. L'objectif étant d'identifier les usages qui permettent de maximiser chacun de ces services et un compromis entre diversité d'usages, biodiversité et stockage de carbone. 
+
+Pour l'instant, la méthode est plutôt descriptive et mérite d'être affinée. 
+
+##Valeurs d'usages réels (totales et par type d'usages)
+
+
+
+```{r warning=TRUE, include=FALSE}
+tree$ali[tree$ali=="NA"]<-"0"
+tree$ali_comm[tree$ali_comm=="NA"]<-"0"
+tree$bois_oe[tree$bois_oe=="NA"]<-"0"
+tree$bois_oe_com[tree$bois_oe_com=="NA"]<-"0"
+tree$serv_eco[tree$serv_eco=="NA"]<-"0"
+tree$symb[tree$symb=="NA"]<-"0"
+tree$pfnl_com[tree$pfnl_com=="NA"]<-"0"
+tree$medi[tree$medi=="NA"]<-"0"
+tree$igname[tree$igname=="NA"]<-"0"
+tree$fourrage[tree$fourrage=="NA"]<-"0"
+tree$artisanat[tree$artisanat=="NA"]<-"0"
+
+tree$ali_n<-as.numeric(tree$ali)
+tree$ali_comm_n<-as.numeric(tree$ali_comm)
+tree$bois_oe_com_n<-as.numeric(tree$bois_oe_com)
+tree$bois_oe_n<-as.numeric(tree$bois_oe)
+tree$serv_eco_n<-as.numeric(tree$serv_eco)
+tree$symb_n<-as.numeric(tree$symb)
+tree$pfnl_com_n<-as.numeric(tree$pfnl_com)
+tree$medi_n<-as.numeric(tree$medi)
+tree$igname_n<-as.numeric(tree$igname)
+tree$fourrage_n<-as.numeric(tree$fourrage)
+tree$artisanat_n<-as.numeric(tree$artisanat)
+
+tree$us<-rowSums(tree[,c("ali_n","ali_comm_n","bois_oe_n","bois_oe_com_n","serv_eco_n","symb_n","pfnl_com_n","medi_n","igname_n","fourrage_n","artisanat_n")],na.rm=TRUE)
+
+tree$us_com<-rowSums(tree[,c("ali_comm_n","bois_oe_com_n","pfnl_com_n")],na.rm=TRUE)
+Valuetot<-as.data.frame(tapply(tree$us,tree$code,sum))
+Valuetot$code<-rownames(Valuetot)
+Valuetot$us<-Valuetot$`tapply(tree$us, tree$code, sum)`
+Valuetot$`tapply(tree$us, tree$code, sum)`=NULL
+
+Valuecom<-as.data.frame(tapply(tree$us_com,tree$code,sum))
+Valuecom$code<-rownames(Valuecom)
+Valuecom$us_com<-Valuecom$`tapply(tree$us_com, tree$code, sum)`
+Valuecom$`tapply(tree$us_com, tree$code, sum)`=NULL
+```
+
+```{r include=FALSE}
+plot<-merge(plot,Valuetot,by="code",all=TRUE)
+plot<-merge(plot,Valuecom,by="code",all=TRUE)
+plot$us_hect<-plot$us/plot$sup
+rm("Valuetot","Valuecom")
+```
+
+```{r include=FALSE}
+us_ali<-as.data.frame(tapply(tree$ali_n,tree$code,sum,na.rm=TRUE))
+us_ali$code<-rownames(us_ali)
+us_ali$us_ali<-us_ali$`tapply(tree$ali_n, tree$code, sum, na.rm = TRUE)`
+us_ali$`tapply(tree$ali_n, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_ali,"code",all=TRUE)
+rm("us_ali")
+plot$us_ali<-as.numeric(plot$us_ali)
+plot$us_ali_hect<-plot$us_ali/plot$sup
+
+us_ali_comm<-as.data.frame(tapply(tree$ali_comm_n,tree$code,sum,na.rm=TRUE))
+us_ali_comm$code<-rownames(us_ali_comm)
+us_ali_comm$us_ali_comm<-us_ali_comm$`tapply(tree$ali_comm_n, tree$code, sum, na.rm = TRUE)`
+us_ali_comm$`tapply(tree$ali_comm_n, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_ali_comm,"code",all=TRUE)
+rm("us_ali_comm")
+plot$us_ali_comm<-as.numeric(plot$us_ali_comm)
+plot$us_ali_comm_hect<-plot$us_ali_comm/plot$sup
+
+us_bois_oe_com<-as.data.frame(tapply(tree$bois_oe_com_n,tree$code,sum,na.rm=TRUE))
+us_bois_oe_com$code<-rownames(us_bois_oe_com)
+us_bois_oe_com$us_bois_oe_com<-us_bois_oe_com$`tapply(tree$bois_oe_com_n, tree$code, sum, na.rm = TRUE)`
+us_bois_oe_com$`tapply(tree$bois_oe_com_n, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_bois_oe_com,"code",all=TRUE)
+rm("us_bois_oe_com")
+plot$us_bois_oe_com<-as.numeric(plot$us_bois_oe_com)
+plot$us_bois_oe_com_hect<-plot$us_bois_oe_com/plot$sup
+
+us_bois_oe<-as.data.frame(tapply(tree$bois_oe_n,tree$code,sum,na.rm=TRUE))
+us_bois_oe$code<-rownames(us_bois_oe)
+us_bois_oe$us_bois_oe<-us_bois_oe$`tapply(tree$bois_oe_n, tree$code, sum, na.rm = TRUE)`
+us_bois_oe$`tapply(tree$bois_oe_n, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_bois_oe,"code",all=TRUE)
+rm("us_bois_oe")
+plot$us_bois_oe<-as.numeric(plot$us_bois_oe)
+plot$us_bois_oe_hect<-plot$us_bois_oe/plot$sup
+
+us_serv_eco<-as.data.frame(tapply(tree$serv_eco_n,tree$code,sum,na.rm=TRUE))
+us_serv_eco$code<-rownames(us_serv_eco)
+us_serv_eco$us_serv_eco<-us_serv_eco$`tapply(tree$serv_eco_n, tree$code, sum, na.rm = TRUE)`
+us_serv_eco$`tapply(tree$serv_eco_n, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_serv_eco,"code",all=TRUE)
+rm("us_serv_eco")
+plot$us_serv_eco<-as.numeric(plot$us_serv_eco)
+plot$us_serv_eco_hect<-plot$us_serv_eco/plot$sup
+
+us_symb<-as.data.frame(tapply(tree$symb_n,tree$code,sum,na.rm=TRUE))
+us_symb$code<-rownames(us_symb)
+us_symb$us_symb<-us_symb$`tapply(tree$symb_n, tree$code, sum, na.rm = TRUE)`
+us_symb$`tapply(tree$symb_n, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_symb,"code",all=TRUE)
+rm("us_symb")
+plot$us_symb<-as.numeric(plot$us_symb)
+plot$us_symb_hect<-plot$us_symb/plot$sup
+
+us_pfnl_com<-as.data.frame(tapply(tree$pfnl_com_n,tree$code,sum,na.rm=TRUE))
+us_pfnl_com$code<-rownames(us_pfnl_com)
+us_pfnl_com$us_pfnl_com<-us_pfnl_com$`tapply(tree$pfnl_com_n, tree$code, sum, na.rm = TRUE)`
+us_pfnl_com$`tapply(tree$pfnl_com_n, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_pfnl_com,"code",all=TRUE)
+rm("us_pfnl_com")
+plot$us_pfnl_com<-as.numeric(plot$us_pfnl_com)
+plot$us_pfnl_com_hect<-plot$us_pfnl_com/plot$sup
+
+us_medi<-as.data.frame(tapply(tree$medi_n,tree$code,sum,na.rm=TRUE))
+us_medi$code<-rownames(us_medi)
+us_medi$us_medi<-us_medi$`tapply(tree$medi_n, tree$code, sum, na.rm = TRUE)`
+us_medi$`tapply(tree$medi_n, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_medi,"code",all=TRUE)
+rm("us_medi")
+plot$us_medi<-as.numeric(plot$us_medi)
+plot$us_medi_hect<-plot$us_medi/plot$sup
+
+us_igname<-as.data.frame(tapply(tree$igname_n,tree$code,sum,na.rm=TRUE))
+us_igname$code<-rownames(us_igname)
+us_igname$us_igname<-us_igname$`tapply(tree$igname_n, tree$code, sum, na.rm = TRUE)`
+us_igname$`tapply(tree$igname_n, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_igname,"code",all=TRUE)
+rm("us_igname")
+plot$us_igname<-as.numeric(plot$us_igname)
+plot$us_igname_hect<-plot$us_igname/plot$sup
+
+us_fourrage<-as.data.frame(tapply(tree$fourrage_n,tree$code,sum,na.rm=TRUE))
+us_fourrage$code<-rownames(us_fourrage)
+us_fourrage$us_fourrage<-us_fourrage$`tapply(tree$fourrage_n, tree$code, sum, na.rm = TRUE)`
+us_fourrage$`tapply(tree$fourrage_n, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_fourrage,"code",all=TRUE)
+rm("us_fourrage")
+plot$us_fourrage<-as.numeric(plot$us_fourrage)
+plot$us_fourrage_hect<-plot$us_fourrage/plot$sup
+```
+
+
+
+
+```{r include=FALSE}
+plot$us_ali_perc<-(plot$us_ali*100)/plot$us
+plot$us_ali_comm_perc<-(plot$us_ali_comm*100)/plot$us
+plot$us_bois_oe_com_perc<-(plot$us_bois_oe_com*100)/plot$us
+plot$us_bois_oe_perc<-(plot$us_bois_oe*100)/plot$us
+plot$us_serv_eco_perc<-(plot$us_serv_eco*100)/plot$us
+plot$us_symb_perc<-(plot$us_symb*100)/plot$us
+plot$us_pfnl_com_perc<-(plot$us_pfnl_com*100)/plot$us
+plot$us_medi_perc<-(plot$us_medi*100)/plot$us
+plot$us_igname_perc<-(plot$us_igname*100)/plot$us
+plot$us_fourrage_perc<-(plot$us_fourrage*100)/plot$us
+
+plot$us_ali_perc<-as.numeric(plot$us_ali_perc)
+plot$us_ali_comm_perc<-as.numeric(plot$us_ali_comm_perc)
+plot$us_bois_oe_com_perc<-as.numeric(plot$us_bois_oe_com_perc)
+plot$us_bois_oe_perc<-as.numeric(plot$us_bois_oe_perc)
+plot$us_serv_eco_perc<-as.numeric(plot$us_serv_eco_perc)
+plot$us_symb_perc<-as.numeric(plot$us_symb_perc)
+plot$us_pfnl_com_perc<-as.numeric(plot$us_pfnl_com_perc)
+plot$us_medi_perc<-as.numeric(plot$us_medi_perc)
+plot$us_igname_perc<-as.numeric(plot$us_igname_perc)
+plot$us_fourrage_perc<-as.numeric(plot$us_fourrage_perc)
+```
+
+```{r echo=FALSE}
+hist(plot$us_hect,main="Distribution des valeurs d'usages réels",xlab="Valeurs d'usages réels par hectare",ylab="Fréquence",breaks=20,col="darkred")
+
+couleur<-as.factor(plot$site)
+plot(plot$us_hect,plot$densit,main="Valeurs d'usages réels et densité \n(couleurs par site)",ylab="Densité (nbr arbres/hect)", xlab="Valeurs d'usages réels (nbr usages/hect)",col=couleur,pch=16,abline(0,1))
+```
+
+Relation entre diversité et type d'usages (nbr d'arbres/hect):
+
+```{r warning=FALSE, include=FALSE}
+ggplot(plot,aes(y=q0al,x=us_ali_hect))+
+  geom_jitter()+
+  ylab("Indice de diversité")+xlab("Nbr d'arbres/hect fournissant un service alimentaire")+ggtitle("Relation entre service alimentaire et diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "blue")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(plot,aes(y=q0al,x=us_ali_comm_hect))+
+  geom_point()+
+  ylab("Indice de diversité")+xlab("Nbr d'arbres/hect fournissant un service alimentaire commercial")+ggtitle("Relation entre service alimentaire commercial et diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "blue")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(plot,aes(y=q0al,x=us_bois_oe_hect))+
+  geom_point()+
+  ylab("Indice de diversité")+xlab("Nbr d'arbres/hect fournissant un service de bois d'oeuvre (domestique)")+ggtitle("Relation entre service de bois d'oeuvre domestique et diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "blue")
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(plot,aes(y=q0al,x=us_serv_eco_hect))+
+  geom_jitter()+
+  ylab("Indice de diversité")+xlab("Nbr d'arbres/hect fournissant un service agronomique aux cacaoyers")+ggtitle("Relation entre service agronomique aux cacaoyers et diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "darkred")+
+  geom_smooth(method="lm",linetype="dashed",color="orange",fill= "orange")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(plot,aes(y=q0al,x=us_medi_hect))+
+  geom_jitter()+
+  ylab("Indice de diversité")+xlab("Nbr d'arbres/hect fournissant un service médicinal")+ggtitle("Relation entre usages médicinaux et diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "darkred")+
+  geom_smooth(method="lm",linetype="dashed",color="orange",fill= "orange")
+```
+
+Relation entre diversité et type d'usages (% arbres d'un usage donné sur l'ensemble des arbres):
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(plot,aes(x=us_serv_eco_perc,y=q0al,color=densit))+
+  geom_jitter()+
+  xlab("% arbres service agronomique")+ylab("Diversité alpha")+ggtitle("Relation entre % arbres rendant un service agronomique \net diversité")+
+  #geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "darkred")+
+  #geom_smooth(method="lm",linetype="dashed",color="orange",fill= "orange")+
+  scale_color_gradientn(colours=rainbow(5))+
+  labs(color="Densité \n(Nbr arbres/hectares)")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(plot,aes(x=us_ali_perc,y=q0al,color=densit))+
+  geom_jitter()+
+  xlab("% arbres alimentaires utilisés")+ylab("Diversité alpha")+ggtitle("Relation entre % arbres alimentaires et diversité")+
+  scale_color_gradientn(colors=rainbow(8))+
+  labs(color="Densité \n(Nbr arbres/hectares)")
+```
+
+
+###Quelle est la spécialisation réelle qui maximise la diversité (à l'échelle de la parcelle)?  
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+a<-ggplot(na.omit(plot[,c("us_ali_perc","q0al")]),aes(x=us_ali_perc>50,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Arbres alimentaires\n(par parcelle)")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<50%","TRUE"=">50%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+
+b<-ggplot(na.omit(plot[,c("us_ali_comm_perc","q0al")]),aes(x=us_ali_comm_perc>50,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Arbres alimentaires commerciaux\n(par parcelle)")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<50%","TRUE"=">50%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+
+c<-ggplot(na.omit(plot[,c("us_medi_perc","q0al")]),aes(x=us_medi_perc>20,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Arbres médicinaux\n(par parcelle)")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<20%","TRUE"=">20%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+
+d<-ggplot(na.omit(plot[,c("us_bois_oe_perc","q0al")]),aes(x=us_bois_oe_perc>20,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Arbres à bois (usage domestique)\n (par parcelle)")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<20%","TRUE"=">20%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+
+e<-ggplot(na.omit(plot[,c("us_pfnl_com_perc","q0al")]),aes(x=us_pfnl_com_perc>40,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Hévéa (par parcelle")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<40%","TRUE"=">40%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+
+f<-ggplot(na.omit(plot[,c("us_serv_eco_perc","q0al")]),aes(x=us_serv_eco_perc>40,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Arbres fournissant un service agronomique\n aux cacaoyers (par parcelle)")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<40%","TRUE"=">40%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+```
+
+```{r warning=FALSE, include=FALSE}
+library(gridExtra)
+library(cowplot)
+```
+
+```{r echo=FALSE}
+plot_grid(a,b,c,d,e,f,labels=c("A","B","C","D","E","F"),ncol=3,nrow=2)
+```
+
+
+
+Comparaison des différents usages:
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=us_ali_perc,y=q0al,colour="Usage alimentaire"),method="auto",linetype="dashed",fill= "darkred",level=0.9)+
+  geom_smooth(data=plot,aes(x=us_ali_comm_perc,y=q0al,colour="Usage alimentaire commercial"),method="auto",linetype="dashed",fill= "orange",level=0.9)+
+  geom_smooth(data=plot,aes(x=us_serv_eco_perc,y=q0al,colour="Service agronomique"),method="auto",linetype="dashed",fill= "yellow",level=0.9)+
+  geom_smooth(data=plot,aes(x=us_medi_perc,y=q0al,colour="Usage médicinal"),method="auto",linetype="dashed",fill= "green",level=0.9)+
+  geom_smooth(data=plot,aes(x=us_bois_oe_perc,y=q0al,colour="Usage bois d'oeuvre domestique"),method="auto",linetype="dashed",fill= "blue",level=0.9)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Usage permettant de maximiser la diversité d'arbres complantés")+
+  ylab("Diversité alpha")+xlab("% d'arbres de la parcelle utilisé pour un usage donné ")
+```
+
+```{r echo=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=us_ali_comm_perc,y=q0al,colour="Usage alimentaire commercial"),method="lm",linetype="dashed",fill= "orange",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_ali_perc,y=q0al,colour="Usage alimentaire"),method="lm",linetype="dashed",fill= "darkred",level=0.9,fullrange=TRUE)+
+   geom_smooth(data=plot,aes(x=us_medi_perc,y=q0al,colour="Usage médicinal"),method="lm",linetype="dashed",fill= "green",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_serv_eco_perc,y=q0al,colour="Service agronomique"),method="lm",linetype="dashed",fill= "yellow",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_bois_oe_perc,y=q0al,colour="Usage bois d'oeuvre domestique"),method="lm",linetype="dashed",fill= "blue",level=0.9,fullrange=TRUE)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Spécialisation permettant de maximiser la diversité d'arbres complantés\n(régression linéaire)")+
+  xlab("% d'arbres de la parcelle utilisé pour un usage donné ")+ylab("Diversité alpha")
+```
+
+###Quelle est la spécialisation réelle qui maximise le nombre d'arbres/hect (à l'échelle de la parcelle)?
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=us_ali_perc,y=densit,colour="Usage alimentaire"),method="auto",linetype="dashed",fill= "darkred",level=0.9)+
+  geom_smooth(data=plot,aes(x=us_ali_comm_perc,y=densit,colour="Usage alimentaire commercial"),method="auto",linetype="dashed",fill= "orange",level=0.9)+
+  geom_smooth(data=plot,aes(x=us_serv_eco_perc,y=densit,colour="Service agronomique"),method="auto",linetype="dashed",fill= "yellow",level=0.9)+
+  geom_smooth(data=plot,aes(x=us_medi_perc,y=densit,colour="Usage médicinal"),method="auto",linetype="dashed",fill= "green",level=0.9)+
+  geom_smooth(data=plot,aes(x=us_bois_oe_perc,y=densit,colour="Usage bois d'oeuvre domestique"),method="auto",linetype="dashed",fill="blue",level=0.9)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Usage permettant de maximiser la densité d'arbres complantés")+
+  ylab("Densité (nbr arbres/hectare)")+xlab("% d'arbres de la parcelle utilisé pour un usage donné")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=us_bois_oe_perc,y=densit,colour="Usage bois d'oeuvre domestique"),method="lm",linetype="dashed",fill="blue",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_ali_perc,y=densit,colour="Usage alimentaire"),method="lm",linetype="dashed",fill= "darkred",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_ali_comm_perc,y=densit,colour="Usage alimentaire commercial"),method="lm",linetype="dashed",fill= "orange",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_serv_eco_perc,y=densit,colour="Service agronomique"),method="lm",linetype="dashed",fill= "yellow",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_medi_perc,y=densit,colour="Usage médicinal"),method="lm",linetype="dashed",fill= "green",level=0.9,fullrange=TRUE)+
+  #geom_smooth(data=plot,aes(x=us_bois_oe_com_perc,y=densit,colour="Usage bois d'oeuvre commercial"),method="lm",linetype="dashed",fill= "pink",level=0.9,fullrange=TRUE)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Usage permettant de maximiser la densité d'arbres complantés\n (régression linéaire)")+
+  xlab("% d'arbres de la parcelle utilisé pour un usage donné")+ylab("Densité (Nbr arbres/hectare)")
+```
+
+###Quelle est la spécialisation réelle qui maximise la biomasse (à l'échelle de la parcelle)?
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=us_ali_comm_perc,y=biomhect,colour="Usage alimentaire commercial"),method="lm",linetype="dashed",fill= "orange",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_ali_perc,y=biomhect,colour="Usage alimentaire"),method="lm",linetype="dashed",fill= "darkred",level=0.9,fullrange=TRUE)+
+   geom_smooth(data=plot,aes(x=us_medi_perc,y=biomhect,colour="Usage médicinal"),method="lm",linetype="dashed",fill= "green",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_bois_oe_perc,y=biomhect,colour="Usage bois d'oeuvre domestique"),method="lm",linetype="dashed",fill= "blue",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_serv_eco_perc,y=biomhect,colour="Service agronomique"),method="lm",linetype="dashed",fill= "yellow",level=0.9,fullrange=TRUE)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Spécialisation permettant de maximiser la biomasse d'arbres complantés\n(régression linéaire)")+
+  xlab("% d'arbres de la parcelle utilisé pour un usage donné ")+ylab("Biomasse tonnes/hectare")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=us_ali_comm_perc,y=biomhect,colour="Usage alimentaire commercial"),method="auto",linetype="dashed",fill= "orange",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_ali_perc,y=biomhect,colour="Usage alimentaire"),method="auto",linetype="dashed",fill= "darkred",level=0.9,fullrange=TRUE)+
+   geom_smooth(data=plot,aes(x=us_medi_perc,y=biomhect,colour="Usage médicinal"),method="auto",linetype="dashed",fill= "green",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_bois_oe_perc,y=biomhect,colour="Usage bois d'oeuvre domestique"),method="auto",linetype="dashed",fill= "blue",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=us_serv_eco_perc,y=biomhect,colour="Service agronomique"),method="auto",linetype="dashed",fill= "yellow",level=0.9,fullrange=TRUE)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Usages permettant de maximiser la biomasse d'arbres complantés\n(régression loess)")+
+  xlab("% d'arbres utilisés")+ylab("Biomasse tonnes/hectare")
+```
+
+##Identification des arbres multifonctionnels (cumulant plusieurs utilisations possibles)
+
+```{r include=FALSE}
+tree$us_arb<-rowSums(tree[,c("ali_n","ali_comm_n","bois_oe_n","bois_oe_com_n","serv_eco_n","symb_n","pfnl_com_n","medi_n","igname_n","fourrage_n","artisanat_n")],na.rm=TRUE)
+
+multi<-as.data.frame(subset(tree,us_arb>=2,nom_arb))
+multi<-as.data.frame(unique(multi$nom_arb))
+multi$multi<-"multi"
+multi$nom_arb<-multi$`unique(multi$nom_arb)`
+multi$`unique(multi$nom_arb)`=NULL
+esp<-merge(esp,multi,"nom_arb",all=TRUE)
+```
+
+Les arbres multifonctionnels (au moins deux usages pratiqués sur la même parcelle):
+
+```{r echo=FALSE}
+subset(esp,multi=="multi",c("Genre","Espèce"))
+```
+
+##Valeurs d'usages potentiels
+
+```{r include=FALSE}
+tree$ali_2[tree$ali=="1"]<-"ali"
+tree$ali_comm_2[tree$ali_comm=="1"]<-"ali_comm"
+tree$bois_oe_2[tree$bois_oe=="1"]<-"bois_oe"
+tree$bois_oe_com_2[tree$bois_oe_com=="1"]<-"bois_oe_com"
+tree$serv_eco_2[tree$serv_eco=="1"]<-"serv_eco"
+tree$symb_2[tree$symb=="1"]<-"symb"
+tree$pfnl_com_2[tree$pfnl_com=="1"]<-"pfnl_com"
+tree$medi_2[tree$medi=="1"]<-"medi"
+tree$igname_2[tree$igname=="1"]<-"igname"
+tree$fourrage_2[tree$fourrage=="1"]<-"fourrage"
+tree$artisanat_2[tree$artisanat=="1"]<-"artisanat"
+
+ali<-as.data.frame(subset(tree,ali_2=="ali",nom_arb))
+ali<-as.data.frame(unique(ali$nom_arb))
+ali$ali_pot<-"ali"
+ali$nom_arb<-ali$`unique(ali$nom_arb)`
+ali$`unique(ali$nom_arb)`=NULL
+esp<-merge(esp,ali,"nom_arb",all=TRUE)
+
+ali_comm<-as.data.frame(subset(tree,ali_comm_2=="ali_comm",nom_arb))
+ali_comm<-as.data.frame(unique(ali_comm$nom_arb))
+ali_comm$ali_comm_pot<-"ali_comm"
+ali_comm$nom_arb<-ali_comm$`unique(ali_comm$nom_arb)`
+ali_comm$`unique(ali_comm$nom_arb)`=NULL
+esp<-merge(esp,ali_comm,"nom_arb",all=TRUE)
+
+bois_oe<-as.data.frame(subset(tree,bois_oe_2=="bois_oe",nom_arb))
+bois_oe<-as.data.frame(unique(bois_oe$nom_arb))
+bois_oe$bois_oe_pot<-"bois_oe"
+bois_oe$nom_arb<-bois_oe$`unique(bois_oe$nom_arb)`
+bois_oe$`unique(bois_oe$nom_arb)`=NULL
+esp<-merge(esp,bois_oe,"nom_arb",all=TRUE)
+
+bois_oe_com<-as.data.frame(subset(tree,bois_oe_com_2=="bois_oe_com",nom_arb))
+bois_oe_com<-as.data.frame(unique(bois_oe_com$nom_arb))
+bois_oe_com$bois_oe_com_pot<-"bois_oe_com"
+bois_oe_com$nom_arb<-bois_oe_com$`unique(bois_oe_com$nom_arb)`
+bois_oe_com$`unique(bois_oe_com$nom_arb)`=NULL
+esp<-merge(esp,bois_oe_com,"nom_arb",all=TRUE)
+
+serv_eco<-as.data.frame(subset(tree,serv_eco_2=="serv_eco",nom_arb))
+serv_eco<-as.data.frame(unique(serv_eco$nom_arb))
+serv_eco$serv_eco_pot<-"serv_eco"
+serv_eco$nom_arb<-serv_eco$`unique(serv_eco$nom_arb)`
+serv_eco$`unique(serv_eco$nom_arb)`=NULL
+esp<-merge(esp,serv_eco,"nom_arb",all=TRUE)
+
+symb<-as.data.frame(subset(tree,symb_2=="symb",nom_arb))
+symb<-as.data.frame(unique(symb$nom_arb))
+symb$symb_pot<-"symb"
+symb$nom_arb<-symb$`unique(symb$nom_arb)`
+symb$`unique(symb$nom_arb)`=NULL
+esp<-merge(esp,symb,"nom_arb",all=TRUE)
+
+pfnl_com<-as.data.frame(subset(tree,pfnl_com_2=="pfnl_com",nom_arb))
+pfnl_com<-as.data.frame(unique(pfnl_com$nom_arb))
+pfnl_com$pfnl_com_pot<-"pfnl_com"
+pfnl_com$nom_arb<-pfnl_com$`unique(pfnl_com$nom_arb)`
+pfnl_com$`unique(pfnl_com$nom_arb)`=NULL
+esp<-merge(esp,pfnl_com,"nom_arb",all=TRUE)
+
+medi<-as.data.frame(subset(tree,medi_2=="medi",nom_arb))
+medi<-as.data.frame(unique(medi$nom_arb))
+medi$medi_pot<-"medi"
+medi$nom_arb<-medi$`unique(medi$nom_arb)`
+medi$`unique(medi$nom_arb)`=NULL
+esp<-merge(esp,medi,"nom_arb",all=TRUE)
+
+igname<-as.data.frame(subset(tree,igname_2=="igname",nom_arb))
+igname<-as.data.frame(unique(igname$nom_arb))
+igname$igname_pot<-"igname"
+igname$nom_arb<-igname$`unique(igname$nom_arb)`
+igname$`unique(igname$nom_arb)`=NULL
+esp<-merge(esp,igname,"nom_arb",all=TRUE)
+
+fourrage<-as.data.frame(subset(tree,fourrage_2=="fourrage",nom_arb))
+fourrage<-as.data.frame(unique(fourrage$nom_arb))
+fourrage$fourrage_pot<-"fourrage"
+fourrage$nom_arb<-fourrage$`unique(fourrage$nom_arb)`
+fourrage$`unique(fourrage$nom_arb)`=NULL
+esp<-merge(esp,fourrage,"nom_arb",all=TRUE)
+
+artisanat<-as.data.frame(subset(tree,artisanat_2=="artisanat",nom_arb))
+artisanat<-as.data.frame(unique(artisanat$nom_arb))
+artisanat$artisanat_pot<-"artisanat"
+artisanat$nom_arb<-artisanat$`unique(artisanat$nom_arb)`
+artisanat$`unique(artisanat$nom_arb)`=NULL
+esp<-merge(esp,artisanat,"nom_arb",all=TRUE)
+
+```
+
+
+```{r include=FALSE}
+tree<-merge(tree,esp[,c("ali_pot","ali_comm_pot","bois_oe_pot","bois_oe_com_pot","serv_eco_pot","symb_pot","pfnl_com_pot","medi_pot","igname_pot","fourrage_pot","artisanat_pot","nom_arb")],"nom_arb",all=TRUE)
+
+tree$ali_pot[tree$ali_pot=="ali"]<-"1"
+tree$ali_comm_pot[tree$ali_comm_pot=="ali_comm"]<-"1"
+tree$bois_oe_pot[tree$bois_oe_pot=="bois_oe"]<-"1"
+tree$bois_oe_com_pot[tree$bois_oe_com_pot=="bois_oe_com"]<-"1"
+tree$serv_eco_pot[tree$serv_eco_pot=="serv_eco"]<-"1"
+tree$symb_pot[tree$symb_pot=="symb"]<-"1"
+tree$pfnl_com_pot[tree$pfnl_com_pot=="pfnl_com"]<-"1"
+tree$medi_pot[tree$medi_pot=="medi"]<-"1"
+tree$igname_pot[tree$igname_pot=="igname"]<-"1"
+tree$fourrage_pot[tree$fourrage_pot=="fourrage"]<-"1"
+tree$artisanat_pot[tree$artisanat_pot=="artisanat"]<-"1"
+
+
+tree$ali_pot<-as.numeric(tree$ali_pot)
+tree$ali_comm_pot<-as.numeric(tree$ali_comm_pot)
+tree$bois_oe_pot<-as.numeric(tree$bois_oe_pot)
+tree$bois_oe_com_pot<-as.numeric(tree$bois_oe_com_pot)
+tree$serv_eco_pot<-as.numeric(tree$serv_eco_pot)
+tree$symb_pot<-as.numeric(tree$symb_pot)
+tree$pfnl_com_pot<-as.numeric(tree$pfnl_com_pot)
+tree$medi_pot<-as.numeric(tree$medi_pot)
+tree$igname_pot<-as.numeric(tree$igname_pot)
+tree$fourrage_pot<-as.numeric(tree$fourrage_pot)
+tree$artisanat_pot<-as.numeric(tree$artisanat_pot)
+
+tree$us_pot<-rowSums(tree[,c("ali_pot","ali_comm_pot","bois_oe_pot","bois_oe_com_pot","serv_eco_pot","symb_pot","pfnl_com_pot","medi_pot","igname_pot","fourrage_pot","artisanat_pot")],na.rm=TRUE)
+```
+
+
+```{r include=FALSE}
+us_ali<-as.data.frame(tapply(tree$ali_pot,tree$code,sum,na.rm=TRUE))
+us_ali$code<-rownames(us_ali)
+us_ali$ali_pot<-us_ali$`tapply(tree$ali_pot, tree$code, sum, na.rm = TRUE)`
+us_ali$`tapply(tree$ali_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_ali,"code",all=TRUE)
+rm("us_ali")
+plot$ali_pot<-as.numeric(plot$ali_pot)
+plot$ali_pot_hect<-plot$ali_pot/plot$sup
+
+us_ali_comm<-as.data.frame(tapply(tree$ali_comm_pot,tree$code,sum,na.rm=TRUE))
+us_ali_comm$code<-rownames(us_ali_comm)
+us_ali_comm$ali_comm_pot<-us_ali_comm$`tapply(tree$ali_comm_pot, tree$code, sum, na.rm = TRUE)`
+us_ali_comm$`tapply(tree$ali_comm_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_ali_comm,"code",all=TRUE)
+rm("us_ali_comm")
+plot$ali_comm_pot<-as.numeric(plot$ali_comm_pot)
+plot$ali_comm_pot_hect<-plot$ali_comm_pot/plot$sup
+
+us_bois_oe_com<-as.data.frame(tapply(tree$bois_oe_com_pot,tree$code,sum,na.rm=TRUE))
+us_bois_oe_com$code<-rownames(us_bois_oe_com)
+us_bois_oe_com$bois_oe_com_pot<-us_bois_oe_com$`tapply(tree$bois_oe_com_pot, tree$code, sum, na.rm = TRUE)`
+us_bois_oe_com$`tapply(tree$bois_oe_com_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_bois_oe_com,"code",all=TRUE)
+rm("us_bois_oe_com")
+plot$bois_oe_com_pot<-as.numeric(plot$bois_oe_com_pot)
+plot$bois_oe_com_pot_hect<-plot$bois_oe_com_pot/plot$sup
+
+us_bois_oe<-as.data.frame(tapply(tree$bois_oe_pot,tree$code,sum,na.rm=TRUE))
+us_bois_oe$code<-rownames(us_bois_oe)
+us_bois_oe$bois_oe_pot<-us_bois_oe$`tapply(tree$bois_oe_pot, tree$code, sum, na.rm = TRUE)`
+us_bois_oe$`tapply(tree$bois_oe_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_bois_oe,"code",all=TRUE)
+rm("us_bois_oe")
+plot$bois_oe_pot<-as.numeric(plot$bois_oe_pot)
+plot$bois_oe_pot_hect<-plot$bois_oe_pot/plot$sup
+
+us_serv_eco<-as.data.frame(tapply(tree$serv_eco_pot,tree$code,sum,na.rm=TRUE))
+us_serv_eco$code<-rownames(us_serv_eco)
+us_serv_eco$serv_eco_pot<-us_serv_eco$`tapply(tree$serv_eco_pot, tree$code, sum, na.rm = TRUE)`
+us_serv_eco$`tapply(tree$serv_eco_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_serv_eco,"code",all=TRUE)
+rm("us_serv_eco")
+plot$serv_eco_pot<-as.numeric(plot$serv_eco_pot)
+plot$serv_eco_pot_hect<-plot$serv_eco_pot/plot$sup
+
+us_symb<-as.data.frame(tapply(tree$symb_pot,tree$code,sum,na.rm=TRUE))
+us_symb$code<-rownames(us_symb)
+us_symb$symb_pot<-us_symb$`tapply(tree$symb_pot, tree$code, sum, na.rm = TRUE)`
+us_symb$`tapply(tree$symb_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_symb,"code",all=TRUE)
+rm("us_symb")
+plot$symb_pot<-as.numeric(plot$symb_pot)
+plot$symb_pot_hect<-plot$symb_pot/plot$sup
+
+us_pfnl_com<-as.data.frame(tapply(tree$pfnl_com_pot,tree$code,sum,na.rm=TRUE))
+us_pfnl_com$code<-rownames(us_pfnl_com)
+us_pfnl_com$pfnl_com_pot<-us_pfnl_com$`tapply(tree$pfnl_com_pot, tree$code, sum, na.rm = TRUE)`
+us_pfnl_com$`tapply(tree$pfnl_com_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_pfnl_com,"code",all=TRUE)
+rm("us_pfnl_com")
+plot$pfnl_com_pot<-as.numeric(plot$pfnl_com_pot)
+plot$pfnl_com_pot_hect<-plot$pfnl_com_pot/plot$sup
+
+us_medi<-as.data.frame(tapply(tree$medi_pot,tree$code,sum,na.rm=TRUE))
+us_medi$code<-rownames(us_medi)
+us_medi$medi_pot<-us_medi$`tapply(tree$medi_pot, tree$code, sum, na.rm = TRUE)`
+us_medi$`tapply(tree$medi_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_medi,"code",all=TRUE)
+rm("us_medi")
+plot$medi_pot<-as.numeric(plot$medi_pot)
+plot$medi_pot_hect<-plot$medi_pot/plot$sup
+
+us_igname<-as.data.frame(tapply(tree$igname_pot,tree$code,sum,na.rm=TRUE))
+us_igname$code<-rownames(us_igname)
+us_igname$igname_pot<-us_igname$`tapply(tree$igname_pot, tree$code, sum, na.rm = TRUE)`
+us_igname$`tapply(tree$igname_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_igname,"code",all=TRUE)
+rm("us_igname")
+plot$igname_pot<-as.numeric(plot$igname_pot)
+plot$igname_pot_hect<-plot$igname_pot/plot$sup
+
+us_fourrage<-as.data.frame(tapply(tree$fourrage_pot,tree$code,sum,na.rm=TRUE))
+us_fourrage$code<-rownames(us_fourrage)
+us_fourrage$fourrage_pot<-us_fourrage$`tapply(tree$fourrage_pot, tree$code, sum, na.rm = TRUE)`
+us_fourrage$`tapply(tree$fourrage_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_fourrage,"code",all=TRUE)
+rm("us_fourrage")
+plot$fourrage_pot<-as.numeric(plot$fourrage_pot)
+plot$fourrage_pot_hect<-plot$fourrage_pot/plot$sup
+
+us_artisanat<-as.data.frame(tapply(tree$artisanat_pot,tree$code,sum,na.rm=TRUE))
+us_artisanat$code<-rownames(us_artisanat)
+us_artisanat$artisanat_pot<-us_artisanat$`tapply(tree$artisanat_pot, tree$code, sum, na.rm = TRUE)`
+us_artisanat$`tapply(tree$artisanat_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_artisanat,"code",all=TRUE)
+rm("us_artisanat")
+plot$artisanat_pot<-as.numeric(plot$artisanat_pot)
+plot$artisanat_pot_hect<-plot$artisanat_pot/plot$sup
+
+us_pot<-as.data.frame(tapply(tree$us_pot,tree$code,sum,na.rm=TRUE))
+us_pot$code<-rownames(us_pot)
+us_pot$us_pot<-us_pot$`tapply(tree$us_pot, tree$code, sum, na.rm = TRUE)`
+us_pot$`tapply(tree$us_pot, tree$code, sum, na.rm = TRUE)`=NULL
+plot<-merge(plot,us_pot,"code",all=TRUE)
+rm("us_pot")
+plot$us_pot<-as.numeric(plot$us_pot)
+plot$us_pot_hect<-plot$us_pot/plot$sup
+```
+
+```{r include=FALSE}
+plot$ali_pot_perc<-(plot$ali_pot*100)/plot$nbtot_arb
+plot$ali_comm_pot_perc<-(plot$ali_comm_pot*100)/plot$nbtot_arb
+plot$bois_oe_com_pot_perc<-(plot$bois_oe_com_pot*100)/plot$nbtot_arb
+plot$bois_oe_pot_perc<-(plot$bois_oe_pot*100)/plot$nbtot_arb
+plot$serv_eco_pot_perc<-(plot$serv_eco_pot*100)/plot$nbtot_arb
+plot$symb_pot_perc<-(plot$symb_pot*100)/plot$nbtot_arb
+plot$pfnl_com_pot_perc<-(plot$pfnl_com_pot*100)/plot$nbtot_arb
+plot$medi_pot_perc<-(plot$medi_pot*100)/plot$nbtot_arb
+plot$igname_pot_perc<-(plot$igname_pot*100)/plot$nbtot_arb
+plot$fourrage_pot_perc<-(plot$fourrage_pot*100)/plot$nbtot_arb
+```
+
+```{r echo=FALSE}
+hist(plot$us_pot_hect,main="Distribution des valeurs d'usages potentiels",xlab="Valeurs d'usages potentiels par hectare",ylab="Fréquence",breaks=20,col="darkred")
+
+couleur<-as.factor(plot$site)
+plot(plot$us_pot_hect,plot$densit,main="Valeurs d'usages potentiels et densité \n(couleurs par site)",ylab="Densité (nbr arbres/hect)", xlab="Valeurs d'usages potentiels (nbr usages/hect)",col=couleur,pch=16,abline(0,1))
+
+plot(plot$us_hect,plot$us_pot_hect, main= "Valeurs d'usages réels et potentiels :\n un potentiel peu utilisé", ylab="Usages potentiels",xlab="Usages réels")
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+ggplot(plot,aes(x=ali_pot_hect,y=q0al))+
+  geom_jitter()+
+  ylab("Indice de diversité")+xlab("Nbr d'arbres/hect pouvant fournir un service alimentaire")+ggtitle("Relation entre service alimentaire potentiel et diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "blue")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(plot,aes(x=ali_comm_pot_hect,y=q0al))+
+  geom_point()+
+  ylab("Indice de diversité")+xlab("Nbr d'arbres/hect pouvant fournir un service alimentaire commercial")+ggtitle("Relation entre service alimentaire commercial et diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "blue")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(plot,aes(y=q0al,x=bois_oe_pot_hect))+
+  geom_point()+
+  ylab("Indice de diversité")+xlab("Nbr d'arbres/hect pouvant être utilisés comme bois d'oeuvre (domestique)")+ggtitle("Relation entre service de bois d'oeuvre domestique et diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "blue")
+```
+
+
+```{r echo=FALSE, warning=FALSE}
+ggplot(plot,aes(y=q0al,x=serv_eco_pot_hect))+
+  geom_jitter()+
+  ylab("Indice de diversité")+xlab("Nbr d'arbres/hect pouvant fournir un service agronomique aux cacaoyers")+ggtitle("Relation entre service agronomique potentiel aux cacaoyers \net diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "darkred")+
+  geom_smooth(method="lm",linetype="dashed",color="orange",fill= "orange")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot(plot,aes(y=q0al,x=medi_pot_hect))+
+  geom_jitter()+
+  ylab("Indice de diversité")+xlab("Nbr d'arbres/hect pouvant fournir un service médicinal")+ggtitle("Relation entre usages médicinaux potentiels \net diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "darkred")+
+  geom_smooth(method="lm",linetype="dashed",color="orange",fill= "orange")
+```
+
+```{r echo=FALSE, warning=FALSE}
+ggplot(plot,aes(x=ali_pot_perc,y=q0al,color=densit))+
+  geom_jitter()+
+  xlab("% arbres alimentaires potentiels")+ylab("Diversité alpha")+ggtitle("Relation entre % arbres alimentaires potentiels \net diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "darkred")+
+  geom_smooth(method="lm",linetype="dashed",color="orange",fill= "orange")+
+  scale_color_gradientn(colours=rainbow(8))+
+  labs(color="Densité \n(Nbr arbres/hectares)")
+```
+
+```{r echo=FALSE, warning=FALSE}
+b<-ggplot(plot,aes(x=serv_eco_pot_perc,y=q0al,color=densit))+
+  geom_jitter()+
+  xlab("% arbres service agronomique potentiel")+ylab("Diversité alpha")+ggtitle("Relation entre % arbres pouvant rendre un service agronomique \net diversité")+
+  geom_smooth(method="auto",linetype="dashed",color="darkred",fill= "darkred")+
+  geom_smooth(method="lm",linetype="dashed",color="orange",fill= "orange")+
+  scale_color_gradientn(colours=rainbow(5))+
+  labs(color="Densité \n(Nbr arbres/hectares)")
+b
+```
+
+
+###Quelle est la spécialisation potentielle qui pourrait maximiser la diversité (à l'échelle de la parcelle)?  
+
+```{r include=FALSE}
+a<-ggplot(na.omit(plot[,c("ali_pot_perc","q0al")]),aes(x=ali_pot_perc>50,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Arbres alimentaires potentiels\n(par parcelle)")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<50%","TRUE"=">50%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+
+b<-ggplot(na.omit(plot[,c("ali_comm_pot_perc","q0al")]),aes(x=ali_comm_pot_perc>50,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Arbres alimentaires commerciaux potentiels\n(par parcelle)")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<50%","TRUE"=">50%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+
+c<-ggplot(na.omit(plot[,c("medi_pot_perc","q0al")]),aes(x=medi_pot_perc>40,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Arbres médicinaux potentiels \n(par parcelle)")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<40%","TRUE"=">40%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+
+d<-ggplot(na.omit(plot[,c("bois_oe_pot_perc","q0al")]),aes(x=bois_oe_pot_perc>40,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Arbres à bois potentiels (usage domestique)\n (par parcelle)")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<40%","TRUE"=">40%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+
+e<-ggplot(na.omit(plot[,c("pfnl_com_pot_perc","q0al")]),aes(x=pfnl_com_pot_perc>40,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Hévéa (par parcelle")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<40%","TRUE"=">40%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+
+f<-ggplot(na.omit(plot[,c("serv_eco_pot_perc","q0al")]),aes(x=serv_eco_pot_perc>40,y=q0al))+
+  geom_boxplot(outlier.colour="red",outlier.shape=8,outlier.size=2,fill='#A4A4A4',color="black")+
+  xlab("Arbres pouvant fournir un service agronomique\n aux cacaoyers (par parcelle)")+ylab("Diversité alpha")+
+  scale_x_discrete(labels=c("FALSE"="<40%","TRUE"=">40%"))+
+  theme(axis.title.x=element_text(size=10),axis.title.y=element_text(size=10))+
+  stat_summary(fun.y=mean,geom="point",color="darkred",size=2)
+```
+
+```{r echo=FALSE}
+plot_grid(a,b,c,d,e,f,labels=c("A","B","C","D","E","F"),ncol=3,nrow=2)
+```
+
+
+```{r echo=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=ali_pot_perc,y=q0al,colour="Usage alimentaire"),method="auto",linetype="dashed",fill= "darkred",level=0.9)+
+  geom_smooth(data=plot,aes(x=ali_comm_pot_perc,y=q0al,colour="Usage alimentaire commercial"),method="auto",linetype="dashed",fill= "orange",level=0.9)+
+  geom_smooth(data=plot,aes(x=serv_eco_pot_perc,y=q0al,colour="Service agronomique"),method="auto",linetype="dashed",fill= "yellow",level=0.9)+
+  geom_smooth(data=plot,aes(x=medi_pot_perc,y=q0al,colour="Usage médicinal"),method="auto",linetype="dashed",fill= "green",level=0.9)+
+  geom_smooth(data=plot,aes(x=bois_oe_pot_perc,y=q0al,colour="Usage bois d'oeuvre domestique"),method="auto",linetype="dashed",fill= "blue",level=0.9)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Spécialisation potentielle permettant de maximiser la diversité d'arbres complantés \n(régression loess)")+
+  ylab("Diversité alpha")+xlab("% d'arbres de la parcelle pouvant être utilisé pour un usage donné ")
+```
+
+
+```{r echo=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=ali_comm_pot_perc,y=q0al,colour="Usage alimentaire commercial"),method="lm",linetype="dashed",fill= "orange",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=ali_pot_perc,y=q0al,colour="Usage alimentaire"),method="lm",linetype="dashed",fill= "darkred",level=0.9,fullrange=TRUE)+
+   geom_smooth(data=plot,aes(x=medi_pot_perc,y=q0al,colour="Usage médicinal"),method="lm",linetype="dashed",fill= "green",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=serv_eco_pot_perc,y=q0al,colour="Service agronomique"),method="lm",linetype="dashed",fill= "yellow",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=bois_oe_pot_perc,y=q0al,colour="Usage bois d'oeuvre domestique"),method="lm",linetype="dashed",fill= "blue",level=0.9,fullrange=TRUE)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Spécialisation potentielle permettant de maximiser la diversité d'arbres complantés\n(régression linéaire)")+
+  xlab("% d'arbres de la parcelle pouvant être utilisés pour un usage donné ")+ylab("Diversité alpha")
+```
+
+###Quelle est la spécialisation potentielle qui pourrait maximiser le nombre d'arbres/hect?
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=ali_pot_perc,y=densit,colour="Usage alimentaire"),method="auto",linetype="dashed",fill= "darkred",level=0.9)+
+  geom_smooth(data=plot,aes(x=ali_comm_pot_perc,y=densit,colour="Usage alimentaire commercial"),method="auto",linetype="dashed",fill= "orange",level=0.9)+
+  geom_smooth(data=plot,aes(x=serv_eco_pot_perc,y=densit,colour="Service agronomique"),method="auto",linetype="dashed",fill= "yellow",level=0.9)+
+  geom_smooth(data=plot,aes(x=medi_pot_perc,y=densit,colour="Usage médicinal"),method="auto",linetype="dashed",fill= "green",level=0.9)+
+  geom_smooth(data=plot,aes(x=bois_oe_pot_perc,y=densit,colour="Usage bois d'oeuvre domestique"),method="auto",linetype="dashed",fill="blue",level=0.9)+
+   scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Usages potentiels permettant de maximiser la densité d'arbres complantés")+
+  ylab("Densité (nbr arbres/hectare)")+xlab("% d'arbres de la parcelle pouvant être utilisés pour un usage donné")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=bois_oe_pot_perc,y=densit,colour="Usage bois d'oeuvre domestique"),method="lm",linetype="dashed",fill="blue",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=ali_pot_perc,y=densit,colour="Usage alimentaire"),method="lm",linetype="dashed",fill= "darkred",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=ali_comm_pot_perc,y=densit,colour="Usage alimentaire commercial"),method="lm",linetype="dashed",fill= "orange",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=serv_eco_pot_perc,y=densit,colour="Service agronomique"),method="lm",linetype="dashed",fill= "yellow",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=medi_pot_perc,y=densit,colour="Usage médicinal"),method="lm",linetype="dashed",fill= "green",level=0.9,fullrange=TRUE)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Spécialisation potentielle permettant de maximiser la densité d'arbres complantés\n (régression linéaire)")+
+  xlab("% d'arbres de la parcelle pouvant être utilisé pour un usage donné")+ylab("Densité (Nbr arbres/hectare)")
+```
+
+###Quelle est la spécialisation potentielle qui pourrait maximiser la biomasse (à l'échelle de la parcelle)?
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=ali_comm_pot_perc,y=biomhect,colour="Usage alimentaire commercial"),method="lm",linetype="dashed",fill= "orange",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=ali_pot_perc,y=biomhect,colour="Usage alimentaire"),method="lm",linetype="dashed",fill= "darkred",level=0.9,fullrange=TRUE)+
+   geom_smooth(data=plot,aes(x=medi_pot_perc,y=biomhect,colour="Usage médicinal"),method="lm",linetype="dashed",fill= "green",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=bois_oe_pot_perc,y=biomhect,colour="Usage bois d'oeuvre domestique"),method="lm",linetype="dashed",fill= "blue",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=serv_eco_pot_perc,y=biomhect,colour="Service agronomique"),method="lm",linetype="dashed",fill= "yellow",level=0.9,fullrange=TRUE)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Spécialisation potentielle permettant de maximiser la biomasse d'arbres complantés\n(régression linéaire)")+
+  xlab("% d'arbres de la parcelle pouvant être utilisé pour un usage donné ")+ylab("Biomasse tonnes/hectare")
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+ggplot()+
+  geom_smooth(data=plot,aes(x=ali_comm_pot_perc,y=biomhect,colour="Usage alimentaire commercial"),method="auto",linetype="dashed",fill= "orange",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=ali_pot_perc,y=biomhect,colour="Usage alimentaire"),method="auto",linetype="dashed",fill= "darkred",level=0.9,fullrange=TRUE)+
+   geom_smooth(data=plot,aes(x=medi_pot_perc,y=biomhect,colour="Usage médicinal"),method="auto",linetype="dashed",fill= "green",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=bois_oe_pot_perc,y=biomhect,colour="Usage bois d'oeuvre domestique"),method="auto",linetype="dashed",fill= "blue",level=0.9,fullrange=TRUE)+
+  geom_smooth(data=plot,aes(x=serv_eco_pot_perc,y=biomhect,colour="Service agronomique"),method="auto",linetype="dashed",fill= "yellow",level=0.9,fullrange=TRUE)+
+  scale_colour_manual(name="Légende",values=c("yellow","darkred","orange","blue","green"))+
+  theme(legend.position="bottom")+
+  guides(col=guide_legend(ncol=2))+
+  ggtitle("Spécialisations potentielles permettant de maximiser la biomasse d'arbres complantés\n(régression loess)")+
+  xlab("% d'arbres pouvant être utilisés pour un usage donné")+ylab("Biomasse tonnes/hectare")
+```
+
+#Conclusion
+
+Arbres médicinaux et arbres fournissant un service agronomique aux cacaoyers semblent être ceux qui introduisent plus de diversité dans les parcelles. A l'inverse, arbres alimentaires sont moins divers mais induisent de plus fortes densités d'arbres à l'hectare. Enfin, les arbres à bois induisent de faibles densités à l'hectare mais une biomasse souvent importante. 
+
+Ces analyses doivent maintenant être incluses dans des approches multivariées plus fidèles à la réalité. En effet, il y a deux limites à ces graphiques: 
+
+- régression de loess: très fluctuantes et peu lisibles
+
+- régression linéaire : elles tendent vers l'infini ce qui n'est pas réaliste et elles ont des intervals de confiance très étendu, témoignant d'une inadéquation du modèle au phénomène. 
+
+Il faudrait également pondérer ces analyses par la densité. Ex: une parcelle avec seulement 3 arbres/hectare qui sont 3 arbres à bois va présenter 100% d'arbres à bois mais une très faible diversité. Ainsi, elle introduit un biais dans l'analyse. Cette parcelle existe et explique la chute de la courbe de loess représentant l'usage bois d'oeuvre sur le graphique diversité. 
+
