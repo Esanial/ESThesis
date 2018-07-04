@@ -72,23 +72,17 @@ output:
 ```
 
 
+
 #Estimation de la biomasse aérienne des cacaoyers
 ##Estimation de la densité des cacaoyers (nbr cacaoyers/hect)
 La densité de cacaoyers n'a pas été mesurée sur les parcelles inventoriées. 
 
 Toutefois, je dispose d'un jeu de données constitué lors de mon Master 2 (avec IDH/CIRAD/ALP). J'avais mesuré les densités de cacaoyers sur 61 parcelles de 12 à 52 ans dans l'ouest ivoirien. Sur chaque parcelle, les cacaoyers ont été comptés dans 4 carrés de 100m² (Sanial, 2015, Ruf et al., 2015). J'ai ensuite calculé la densité moyenne de ces 4 carrés pour chaque parcelle. 
-Dans ce jeu de données, la relation entre âge du champ et densité peut s'écrire selon l'équation linéaire suivante : -0.15x+19.5
-NB: Prendre plutôt le modèle lognormal -4.509ln(x)+29.97
+Dans ce jeu de données, la relation entre âge du champ et densité peut s'écrire selon l'équation suivante -4.509ln(x)+29.97.
 
 Ainsi, j'ai pu estimer la densité des cacaoyers en fonction de l'âge pour chacune des parcelles inventoriées dans le cadre de me thèse. 
 
 
-```r
-#Ajout du cacao#
-Carbonestimated<-merge(Carbonestimated,plot,"code")
-#Carbonestimated$kkodensit<-(((-0.15*Carbonestimated$age_champ)+19.5)*100)
-Carbonestimated$kkodensit<-(((-4.509*log(Carbonestimated$age_champ))+29.9)*100)
-```
 
 L'estimation de la densité moyenne des cacaoyers (nbr cacaoyers/hectares) (
 [1] 1588.314
@@ -100,7 +94,17 @@ Toutefois, lors des inventaires botaniques, les portions de la parcelle n'ayant 
 [1] 1477.866
  cacaoyers par hectare .
 
-##Estimation de la biomasse aérienne des cacaoyers (tonnes/hectare)
+
+On pourrait également enlever de la superficie totale la surface terrière des arbres, mais elle est tellement faible que cela n'impactera que peu le résultat. 
+
+Il faudrait plutôt prendre en compte l'effet de certaines essences d'arbres compagnons sur la densité des cacaoyers (pas de cacaoyers autour du pied de ces arbres: Samba, Manguiers, Orangers, Tigleti,..) (voir méthode n°2 ci-dessous).
+
+
+
+
+##Méthode n°1:estimation de la biomasse aérienne des cacaoyers (tonnes/hectare)
+
+Dans cette méthode on ne prend pas en compte l'effet de l'ombrage sur la biomasse des cacaoyers ni celui de la présence d'arbres compagnons sur la densité de cacaoyers. 
 
 La biomasse aérienne du cacaoyer, d'après le modèle de Zuidema et al.,(2005), représente 88.2% de la biomasse totale (d'après la compilation de différentes mesures effectuées au Brésil, Congo, Costa Rica, Malaysie, Nigeria et Vénézuela). 
 La régression logarithmique entre l'âge de l'arbre et la biomasse est, toujours d'après ce modèle physiologique : 
@@ -116,67 +120,101 @@ Carbonestimated$kkobiomasse<-((((8.46*log(Carbonestimated$age_champ)+9.4)*88.2)/
 #Limite de ce calcul: les données sont prises sur des plantations ombragées, donc avec plus de biomasse cacaoyère. 
 ```
 
-Une autre méthode pourrait être choisie: utiliser le package BIOMASS et prendre en compte également la hauteur des caacoyers qui est fonction de l'ombrage (20 à 25m sous ombrage fort contre 3 à 10m sous ombrage léger Van Vliet (2015)). 
+
+## Méthode n°2: estimation de la biomasse aérienne des cacaoyers (prise en compte de l'effet de certains arbres et de l'ombrage)
+
+N'ayant pas trouvé d'étude croisant effet de l'âge et de l'ombrage sur la biomasse cacaoyère, il nous a fallut combiner deux études différentes. 
+Le modèle de Zuidema et al., (2005) se base sur des données expérimentales tirées de plusieurs plantations dont la plupart d'entre elles sont ombragées (ombrage mixte (Aranguren et al., 1982 ), ombrage léger de cocotiers (Teoh et al., 1980), ombrage dense d'agroforêts traditionnelles ( Subler, 1994)). 
+
+Les travaux d'Isaac et al., 2007 réalisés au Ghana dans des conditions environnementales proches de celles de mes sites d'inventaire, peuvent être pris en compte pour affiner l'estimation de la biomasse cacaoyère.Cette étude, conduite en plantations expérimentales, vise à mesurer l'effet de l'ombrage sur la biomasse cacaoyère. Quatre combinaisons sont testées dans cette plantation âgée de 8 ans:
+
+- cacaoyers
+- cacaoyers complantés avec Albizia
+- cacaoyers complantés avec Milicia
+- cacaoyers complantés avec Newbouldia. 
+
+J'ai comparé ses résultats avec ceux du modèle de Zuidema et al. pour x=8. 
+
+Chez Isaac et al. à 8 ans un cacaoyer plein soleil a 20.75kg de biomasse aérienne, un cacaoyer sous un ombrage dense (Milicia excelsa) a 37.2 kg et un cacaoyer sous ombrage léger (Newbouldia laevis) 28 kg. A plus de 5m du pied de l'arbre compagnon quel qu'il soit les biomasses des cacaoyers ne varient que très peu (respectivement 21 kg et 19.7kg) . 
+Ainsi, j'ai retenu de manière schématique que la biomasse augmente avec l'ombrage dans un rayon de 5m autour de l'arbre. 
+
+Le modèle de Zuidema et al., pour un âge de 8 ans, donne une biomasse aérienne de 23.8 kg ce qui est supérieur de 13.1% aux résultats de Isaac et al. Cela peut venir du fait que les plantations dont est tiré le modèle sont pour une majeure partie d'entre elles ombragées. Je considère donc que pour obtenir la biomasse aérienne d'un cacaoyer plein soleil il faut baisser le résultat de l'équation de Zuidema de 13.1%. 
+
+J'ai ensuite classé les arbres compagnons de mes parcelles en deux grandes catégories:
+
+- ombrage léger (arbres dont le port et l'ombrage sont similaires à celui de Newbouldia laevis)
+
+- ombrage dense (arbres dont le port et l'ombrage sont similaire à celui de Milicia excelsa). 
+
+Dans ces deux grandes catégories j'ai sélectionné les individus qui sont plus hauts que les cacaoyers (cette taille varie selon les plantations et cette information a été relevée lors de l'inventaire) et qui leur fournissent donc un ombrage. Ensuite, à l'aide d'un SIG un cercle de 5m de rayon a été tracé autour de ces arbres et l'emprise au sol de ces cercles (schématisant l'ombrage) a été mesurée. 
+Cette méthode permet d'obtenir pour 1 hectare de plantation la proportion de cacaoyers situés en plein soleil, la proportion sous ombrage léger et la proportion sous ombrage dense. A l'aide de la densité de cacaoyers précédemment calculée, on peut donc connaître le nombre de cacaoyers pour chaque type d'ombrage. 
+
+Enfin, certains arbres ont un effet sur la densité de cacaoyers. A leur pied, et sur une distance variant selon les espèces, aucun cacaoyer ne pousse. Nos relevés de terrains ont permis de dresser une liste de ces arbres et d'estimer, selon l'espèce, un rayon sur lequel aucun cacaoyer ne pousse. Ces surfaces ont été représentées dans le SIG pour les arbres dont le périmètre est supérieur à 45cm. Elles ont été mesurées puis retirées des catégories correspondantes (plein soleil, ombrage dense, ombrage léger). 
+
+Une fois les trois catégories de cacaoyers bien définies, la régression de Zuidema et al. est appliquée à chaque catégorie et pondérée en fonction des résultats d'Isaac et al.: 
+- moins 13.1 % pour le plein soleil
+- plus 15 % pour l'ombrage léger
+- plus 36.1% pour l'ombrage dense.
 
 
-#Estimation de la biomasse totale et du carbone (Tonnes/hect) (arbres associés + cacaoyers)
+
+
+#Estimation de la biomasse totale et du carbone (Tonnes/hect) (arbres compagnons + cacaoyers)
+
+densit= densité des arbres compagnons
+
+biomhect = biomasse des arbres compagnons
+
+kkobiomasse et carbontot= résultat selon la méthode n°1
+
+kkobiomasse2 et carbontot2= résultat selon la méthode n°2
+
 
 
 
 ```
-##    code     densit    biomhect kkobiomasse   biomtot carbontot
-## 1   32A  59.154096  81.8021298    42.89466 124.69679  62.34839
-## 2  32AA  22.320000  15.0925982    44.19060  59.28319  29.64160
-## 3  32AC  46.500000  45.7471246    43.73516  89.48228  44.74114
-## 4  32AD  68.300000  72.3558904    46.54409 118.89998  59.44999
-## 5   32B  29.781602  54.9290289    47.56529 102.49432  51.24716
-## 6   32C  69.406393  42.8271867    46.87194  89.69913  44.84956
-## 7   32D  21.673891  28.1270110    47.32555  75.45256  37.72628
-## 8   32G 218.403151 100.8940709    42.49641 143.39048  71.69524
-## 9   32I  59.128930  63.4311049    40.59528 104.02638  52.01319
-## 10  32J  74.503960  48.1523417    47.17518  95.32752  47.66376
-## 11  32K  57.503394  53.2834502    42.08909  95.37254  47.68627
-## 12  32L 231.670755  65.1969879    41.77918 106.97617  53.48809
-## 13  32M  29.290519  25.9020343    45.53706  71.43909  35.71955
-## 14  32W  33.330000  14.8287012    41.76096  56.58966  28.29483
-## 15   3A  32.213845  60.2944828    47.60148 107.89596  53.94798
-## 16   3B  36.287509  36.5296535    42.70540  79.23505  39.61753
-## 17   3C  12.181617  15.0600924    45.28921  60.34930  30.17465
-## 18   3I  58.474576  64.7714474    39.95449 104.72594  52.36297
-## 19  82A  46.533827  33.2744159    47.37961  80.65403  40.32701
-## 20 82AA  18.759019  13.4592073    47.56529  61.02450  30.51225
-## 21 82AB  38.613081  75.2015512    48.39398 123.59553  61.79776
-## 22  82G  67.796610  41.0267310    45.92937  86.95610  43.47805
-## 23  82H 106.106106 102.8630352    42.06054 144.92357  72.46179
-## 24  82I  25.900000  13.7778334    46.74382  60.52165  30.26083
-## 25  82K  25.470000  18.7186091    48.85914  67.57775  33.78887
-## 26  82L  13.595482   2.1390955    48.78270  50.92179  25.46090
-## 27  82M  12.708787  23.1690798    48.15822  71.32730  35.66365
-## 28  82N  48.171793  21.4773307    45.89900  67.37633  33.68817
-## 29   8B  20.184136  55.5057279    36.57459  92.08032  46.04016
-## 30   8D  38.374718  34.3022873    48.22328  82.52556  41.26278
-## 31   8E  37.011173  59.9484024    48.35544 108.30384  54.15192
-## 32   8G  24.261603  32.5565073    49.22793  81.78443  40.89222
-## 33   8K   2.678571   0.6021546    46.26192  46.86408  23.43204
-## 34   8L  37.922317  20.7008641    42.49344  63.19430  31.59715
-## 35  8Ma 112.513304  28.5589113    48.22397  76.78288  38.39144
-## 36  8Mb 123.499142  76.8079087    39.32011 116.12802  58.06401
-## 37   8P  15.885316   7.4132162    47.47934  54.89255  27.44628
+##    code    biomhect kkobiomasse kkobiomasse2 carbontot carbontot2
+## 1   32A  81.8021298    42.89466     39.13028  62.34839   60.46621
+## 2  32AA  15.0925982    44.19060     39.04180  29.64160   27.06720
+## 3  32AC  45.7471246    43.73516     37.60363  44.74114   41.67538
+## 4  32AD  72.3558904    46.54409     41.73674  59.44999   57.04632
+## 5   32B  54.9290289    47.56529     39.48144  51.24716   47.20523
+## 6   32C  42.8271867    46.87194     42.82687  44.84956   42.82703
+## 7   32D  28.1270110    47.32555     41.63476  37.72628   34.88088
+## 8   32G 100.8940709    42.49641     47.56543  71.69524   74.22975
+## 9   32I  63.4311049    40.59528     34.40728  52.01319   48.91919
+## 10  32J  48.1523417    47.17518     43.15955  47.66376   45.65595
+## 11  32K  53.2834502    42.08909     38.18735  47.68627   45.73540
+## 12  32L  65.1969879    41.77918     41.46147  53.48809   53.32923
+## 13  32M  25.9020343    45.53706     39.98681  35.71955   32.94442
+## 14  32W  14.8287012    41.76096     37.17660  28.29483   26.00265
+## 15   3A  60.2944828    47.60148     41.69242  53.94798   50.99345
+## 16   3B  36.5296535    42.70540     37.22419  39.61753   36.87692
+## 17   3C  15.0600924    45.28921     39.47677  30.17465   27.26843
+## 18   3I  64.7714474    39.95449     36.21477  52.36297   50.49311
+## 19  82A  33.2744159    47.37961     38.54181  40.32701   35.90811
+## 20 82AA  13.4592073    47.56529     40.38035  30.51225   26.91978
+## 21 82AB  75.2015512    48.39398     40.95402  61.79776   58.07778
+## 22  82G  41.0267310    45.92937     38.66554  43.47805   39.84614
+## 23  82H 102.8630352    42.06054     32.10406  72.46179   67.48355
+## 24  82I  13.7778334    46.74382     42.43725  30.26083   28.10754
+## 25  82K  18.7186091    48.85914     41.81449  33.78887   30.26655
+## 26  82L   2.1390955    48.78270     41.92178  25.46090   22.03044
+## 27  82M  23.1690798    48.15822     41.74496  35.66365   32.45702
+## 28  82N  21.4773307    45.89900     39.51155  33.68817   30.49444
+## 29   8B  55.5057279    36.57459     32.31644  46.04016   43.91108
+## 30   8D  34.3022873    48.22328     41.39809  41.26278   37.85019
+## 31   8E  59.9484024    48.35544     40.81071  54.15192   50.37956
+## 32   8G  32.5565073    49.22793     42.93085  40.89222   37.74368
+## 33   8K   0.6021546    46.26192     40.20161  23.43204   20.40188
+## 34   8L  20.7008641    42.49344     36.24352  31.59715   28.47219
+## 35  8Ma  28.5589113    48.22397     38.67462  38.39144   33.61677
+## 36  8Mb  76.8079087    39.32011     43.39584  58.06401   60.10187
+## 37   8P   7.4132162    47.47934     41.42215  27.44628   24.41768
 ```
+![](Part2Carbon_files/figure-html/unnamed-chunk-12-1.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-12-2.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-12-3.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-12-4.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-12-5.png)<!-- -->
 
-```r
-hist(Carbonestimated$carbontot)
-```
-
-![](Part2Carbon_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
-
-```r
-boxplot(Carbonestimated$carbontot,main="Tonne de carbone/hect")
-```
-
-![](Part2Carbon_files/figure-html/unnamed-chunk-10-2.png)<!-- -->
-
-Les parcelles étudiées stockent de
+Avec la méthode n°1, les parcelles étudiées stockent de
 [1] 23.43204
 à
 [1] 72.46179
@@ -188,14 +226,27 @@ En moyenne on estime
 [1] 12.74707
 ) tonnes de carbone/hectare. 
 
+Avec la méthode n°2, les parcelles étudiées stockent de
+[1] 20.40188
+à
+[1] 74.22975
+tonnes de carbone par hectare (cacaoyers+arbres associés). 
+
+En moyenne on estime 
+[1] 40.86765
+(sd
+[1] 13.32683
+) tonnes de carbone/hectare. 
+
+
 Pour indication, d'après Nijmeijer et al., (2017) une agroforêt à cacao camerounaise stocke en moyenne 72 tonnes par hectare (sd 8). 
 
-Il convient de garder à l'esprit que l'estimation de biomasse aérienne des cacaoyers peut être sur-estimée dans notre étude: en effet les données d'observation sont issues de plantation ombragées. Dans ces conditions d'ombrage, les cacaoyers ont plus de biomasse que dans des conditions moins ombragées comme on l'observe plus couramment en Côte d'Ivoire. 
-
-#Estimation du carbone par type d'arbres(planté, recrû,...)
 
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-16-1.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-16-2.png)<!-- -->
+#Estimation du carbone par type d'arbres compagnons (planté, recrû,...)
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-22-1.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-22-2.png)<!-- -->
 
 
 
@@ -210,36 +261,36 @@ Il convient de garder à l'esprit que l'estimation de biomasse aérienne des cac
 
 
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
-
-![](Part2Carbon_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
-![](Part2Carbon_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
-
-##Occupation des sols
-###Bas fonds
-![](Part2Carbon_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
-
-![](Part2Carbon_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
-
-
-![](Part2Carbon_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
-
-###Cacao
-La proximité d'une cacaoyère agroforestière pourrait permettre la diffusion de certaines espèces arborées repoussant spontanément dans les cacaoyères. Ainsi, les parcelles qui se situent au milieu d'un grand bloc de cacaoyères (comme on l'observe souvent) pourraient connaître un recrû spontané plus important et plus variés que celles situées à procximité de bas fonds ou de cultures permanentes. 
-
 ![](Part2Carbon_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 ![](Part2Carbon_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
-
-
 ![](Part2Carbon_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
 
-###Forêt
+##Occupation des sols
+###Bas fonds
 ![](Part2Carbon_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
 
 ![](Part2Carbon_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
 
+
 ![](Part2Carbon_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
+
+###Cacao
+La proximité d'une cacaoyère agroforestière pourrait permettre la diffusion de certaines espèces arborées repoussant spontanément dans les cacaoyères. Ainsi, les parcelles qui se situent au milieu d'un grand bloc de cacaoyères (comme on l'observe souvent) pourraient connaître un recrû spontané plus important et plus variés que celles situées à procximité de bas fonds ou de cultures permanentes. 
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
+
+###Forêt
+![](Part2Carbon_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
 
 #Service diversité
 
@@ -376,7 +427,7 @@ La proximité d'une cacaoyère agroforestière pourrait permettre la diffusion d
 
 ##Diversité Alpha, Bêta et Gamma pour les arbres spontanés
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
 
 
 
@@ -407,7 +458,7 @@ Observation de la covariance entre diversité et carbone: est-ce que plus la par
 ## F-statistic: 6.728 on 1 and 35 DF,  p-value: 0.01377
 ```
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
 
 Observation de la covariance entre carbone stocké par le recrû spontané et diversité de ce recrû
 
@@ -434,22 +485,22 @@ Observation de la covariance entre carbone stocké par le recrû spontané et di
 ## F-statistic: 13.86 on 1 and 32 DF,  p-value: 0.0007574
 ```
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-40-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
 
 
 #Covariance Diversité et déterminants environnementaux
 ##Densité/Diversité
-![](Part2Carbon_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-47-1.png)<!-- -->
 
 ##Age
 
 ![](Part2Carbon_files/figure-html/Covariance carbone et age-1.png)<!-- -->
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-48-1.png)<!-- -->
 
 ##Occupation des sols: effet sur le recrû spontané
 ###Bas fonds
-![](Part2Carbon_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-49-1.png)<!-- -->
 
 
 ###Cacao
@@ -476,24 +527,24 @@ Observation de la covariance entre carbone stocké par le recrû spontané et di
 ## F-statistic: 19.28 on 1 and 85 DF,  p-value: 3.237e-05
 ```
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-44-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-50-1.png)<!-- -->
 
 ###Forêt
-![](Part2Carbon_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-51-1.png)<!-- -->
 
 ###Autres cultures permanentes en monoculture (palmier, hévéa, teck etc...)
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-52-1.png)<!-- -->
 
 ##Relief
 
 ###Altitude
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-47-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-53-1.png)<!-- -->
 
 ###Pente
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-48-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-54-1.png)<!-- -->
 
 #Conclusion
 
@@ -545,27 +596,27 @@ Pour l'instant, la méthode est plutôt descriptive et mérite d'être affinée.
 
 
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-53-1.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-53-2.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-59-1.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-59-2.png)<!-- -->
 
 Relation entre diversité et type d'usages (nbr d'arbres/hect):
 
 
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-55-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-61-1.png)<!-- -->
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-56-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-62-1.png)<!-- -->
 
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-57-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-63-1.png)<!-- -->
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-58-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-64-1.png)<!-- -->
 
 Relation entre diversité et type d'usages (% arbres d'un usage donné sur l'ensemble des arbres):
 
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-59-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-65-1.png)<!-- -->
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-60-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-66-1.png)<!-- -->
 
 
 ###Quelle est la spécialisation réelle qui maximise la diversité (à l'échelle de la parcelle)?  
@@ -575,27 +626,27 @@ Relation entre diversité et type d'usages (% arbres d'un usage donné sur l'ens
 
 
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-63-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-69-1.png)<!-- -->
 
 
 
 Comparaison des différents usages:
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-64-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-70-1.png)<!-- -->
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-65-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-71-1.png)<!-- -->
 
 ###Quelle est la spécialisation réelle qui maximise le nombre d'arbres/hect (à l'échelle de la parcelle)?
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-66-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-72-1.png)<!-- -->
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-67-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-73-1.png)<!-- -->
 
 ###Quelle est la spécialisation réelle qui maximise la biomasse (à l'échelle de la parcelle)?
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-68-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-74-1.png)<!-- -->
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-69-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-75-1.png)<!-- -->
 
 ##Identification des arbres multifonctionnels (cumulant plusieurs utilisations possibles)
 
@@ -699,42 +750,11 @@ Les arbres multifonctionnels (au moins deux usages pratiqués sur la même parce
 
 
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-76-1.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-76-2.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-76-3.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-82-1.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-82-2.png)<!-- -->![](Part2Carbon_files/figure-html/unnamed-chunk-82-3.png)<!-- -->
 
 
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-78-1.png)<!-- -->
-
-![](Part2Carbon_files/figure-html/unnamed-chunk-79-1.png)<!-- -->
-
-
-
-```
-## `geom_smooth()` using method = 'loess'
-```
-
-![](Part2Carbon_files/figure-html/unnamed-chunk-80-1.png)<!-- -->
-
-![](Part2Carbon_files/figure-html/unnamed-chunk-81-1.png)<!-- -->
-
-
-```
-## `geom_smooth()` using method = 'loess'
-```
-
-![](Part2Carbon_files/figure-html/unnamed-chunk-82-1.png)<!-- -->
-
-
-```
-## `geom_smooth()` using method = 'loess'
-```
-
-![](Part2Carbon_files/figure-html/unnamed-chunk-83-1.png)<!-- -->
-
-
-###Quelle est la spécialisation potentielle qui pourrait maximiser la diversité (à l'échelle de la parcelle)?  
-
-
+![](Part2Carbon_files/figure-html/unnamed-chunk-84-1.png)<!-- -->
 
 ![](Part2Carbon_files/figure-html/unnamed-chunk-85-1.png)<!-- -->
 
@@ -742,28 +762,59 @@ Les arbres multifonctionnels (au moins deux usages pratiqués sur la même parce
 
 ```
 ## `geom_smooth()` using method = 'loess'
+```
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-86-1.png)<!-- -->
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-87-1.png)<!-- -->
+
+
+```
+## `geom_smooth()` using method = 'loess'
+```
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-88-1.png)<!-- -->
+
+
+```
+## `geom_smooth()` using method = 'loess'
+```
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-89-1.png)<!-- -->
+
+
+###Quelle est la spécialisation potentielle qui pourrait maximiser la diversité (à l'échelle de la parcelle)?  
+
+
+
+![](Part2Carbon_files/figure-html/unnamed-chunk-91-1.png)<!-- -->
+
+
+
+```
+## `geom_smooth()` using method = 'loess'
 ## `geom_smooth()` using method = 'loess'
 ## `geom_smooth()` using method = 'loess'
 ## `geom_smooth()` using method = 'loess'
 ## `geom_smooth()` using method = 'loess'
 ```
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-86-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-92-1.png)<!-- -->
 
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-87-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-93-1.png)<!-- -->
 
 ###Quelle est la spécialisation potentielle qui pourrait maximiser le nombre d'arbres/hect?
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-88-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-94-1.png)<!-- -->
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-89-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-95-1.png)<!-- -->
 
 ###Quelle est la spécialisation potentielle qui pourrait maximiser la biomasse (à l'échelle de la parcelle)?
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-90-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-96-1.png)<!-- -->
 
-![](Part2Carbon_files/figure-html/unnamed-chunk-91-1.png)<!-- -->
+![](Part2Carbon_files/figure-html/unnamed-chunk-97-1.png)<!-- -->
 
 #Conclusion
 

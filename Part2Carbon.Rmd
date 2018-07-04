@@ -90,17 +90,17 @@ plot2[,c("code","densit","biomhect")]
 ```{r include=FALSE}
 rm("plot2")
 ```
+
 #Estimation de la biomasse aérienne des cacaoyers
 ##Estimation de la densité des cacaoyers (nbr cacaoyers/hect)
 La densité de cacaoyers n'a pas été mesurée sur les parcelles inventoriées. 
 
 Toutefois, je dispose d'un jeu de données constitué lors de mon Master 2 (avec IDH/CIRAD/ALP). J'avais mesuré les densités de cacaoyers sur 61 parcelles de 12 à 52 ans dans l'ouest ivoirien. Sur chaque parcelle, les cacaoyers ont été comptés dans 4 carrés de 100m² (Sanial, 2015, Ruf et al., 2015). J'ai ensuite calculé la densité moyenne de ces 4 carrés pour chaque parcelle. 
-Dans ce jeu de données, la relation entre âge du champ et densité peut s'écrire selon l'équation linéaire suivante : -0.15x+19.5
-NB: Prendre plutôt le modèle lognormal -4.509ln(x)+29.97
+Dans ce jeu de données, la relation entre âge du champ et densité peut s'écrire selon l'équation suivante -4.509ln(x)+29.97.
 
 Ainsi, j'ai pu estimer la densité des cacaoyers en fonction de l'âge pour chacune des parcelles inventoriées dans le cadre de me thèse. 
 
-```{r Densite moy sur les parcelles, echo=TRUE, message=FALSE, warning=FALSE}
+```{r Densite moy sur les parcelles, echo=FALSE, message=FALSE, warning=FALSE}
 #Ajout du cacao#
 Carbonestimated<-merge(Carbonestimated,plot,"code")
 #Carbonestimated$kkodensit<-(((-0.15*Carbonestimated$age_champ)+19.5)*100)
@@ -123,7 +123,32 @@ mean(Carbonestimated$kkodensitmoinsparc)
 ```
  cacaoyers par hectare .
 
-##Estimation de la biomasse aérienne des cacaoyers (tonnes/hectare)
+
+On pourrait également enlever de la superficie totale la surface terrière des arbres, mais elle est tellement faible que cela n'impactera que peu le résultat. 
+
+Il faudrait plutôt prendre en compte l'effet de certaines essences d'arbres compagnons sur la densité des cacaoyers (pas de cacaoyers autour du pied de ces arbres: Samba, Manguiers, Orangers, Tigleti,..) (voir méthode n°2 ci-dessous).
+
+```{r include=FALSE}
+#Création de 3 variables: sur 1 hectare : nb_kko plein soleil,nb de kko light_shade, nb de kko dens_shad
+#on rapporte les superficies ombragées à l'hectare:
+
+Carbonestimated$dens_shad_eff<-Carbonestimated$dens_shad_eff/Carbonestimated$sup
+Carbonestimated$light_shad_eff<-Carbonestimated$light_shad_eff/Carbonestimated$sup
+Carbonestimated$effet<-Carbonestimated$effet/Carbonestimated$sup
+Carbonestimated$full_sun<-1-(Carbonestimated$dens_shad_eff+Carbonestimated$light_shad_eff+Carbonestimated$effet)
+
+#Calculer le nbr de cacaoyer pour chaque catégorie:
+Carbonestimated$kkofullsun<-Carbonestimated$kkodensit*Carbonestimated$full_sun
+Carbonestimated$kkofullsun<-Carbonestimated$kkofullsun-(Carbonestimated$kkofullsun*Carbonestimated$parc/100)
+
+Carbonestimated$kkodensshad<-Carbonestimated$kkodensit*Carbonestimated$dens_shad_eff
+Carbonestimated$kkolightshad<-Carbonestimated$kkodensit*Carbonestimated$light_shad_eff
+```
+
+
+##Méthode n°1:estimation de la biomasse aérienne des cacaoyers (tonnes/hectare)
+
+Dans cette méthode on ne prend pas en compte l'effet de l'ombrage sur la biomasse des cacaoyers ni celui de la présence d'arbres compagnons sur la densité de cacaoyers. 
 
 La biomasse aérienne du cacaoyer, d'après le modèle de Zuidema et al.,(2005), représente 88.2% de la biomasse totale (d'après la compilation de différentes mesures effectuées au Brésil, Congo, Costa Rica, Malaysie, Nigeria et Vénézuela). 
 La régression logarithmique entre l'âge de l'arbre et la biomasse est, toujours d'après ce modèle physiologique : 
@@ -138,24 +163,86 @@ Carbonestimated$kkobiomasse<-((((8.46*log(Carbonestimated$age_champ)+9.4)*88.2)/
 #Limite de ce calcul: les données sont prises sur des plantations ombragées, donc avec plus de biomasse cacaoyère. 
 ```
 
-Une autre méthode pourrait être choisie: utiliser le package BIOMASS et prendre en compte également la hauteur des caacoyers qui est fonction de l'ombrage (20 à 25m sous ombrage fort contre 3 à 10m sous ombrage léger Van Vliet (2015)). 
+
+## Méthode n°2: estimation de la biomasse aérienne des cacaoyers (prise en compte de l'effet de certains arbres et de l'ombrage)
+
+N'ayant pas trouvé d'étude croisant effet de l'âge et de l'ombrage sur la biomasse cacaoyère, il nous a fallut combiner deux études différentes. 
+Le modèle de Zuidema et al., (2005) se base sur des données expérimentales tirées de plusieurs plantations dont la plupart d'entre elles sont ombragées (ombrage mixte (Aranguren et al., 1982 ), ombrage léger de cocotiers (Teoh et al., 1980), ombrage dense d'agroforêts traditionnelles ( Subler, 1994)). 
+
+Les travaux d'Isaac et al., 2007 réalisés au Ghana dans des conditions environnementales proches de celles de mes sites d'inventaire, peuvent être pris en compte pour affiner l'estimation de la biomasse cacaoyère.Cette étude, conduite en plantations expérimentales, vise à mesurer l'effet de l'ombrage sur la biomasse cacaoyère. Quatre combinaisons sont testées dans cette plantation âgée de 8 ans:
+
+- cacaoyers
+- cacaoyers complantés avec Albizia
+- cacaoyers complantés avec Milicia
+- cacaoyers complantés avec Newbouldia. 
+
+J'ai comparé ses résultats avec ceux du modèle de Zuidema et al. pour x=8. 
+
+Chez Isaac et al. à 8 ans un cacaoyer plein soleil a 20.75kg de biomasse aérienne, un cacaoyer sous un ombrage dense (Milicia excelsa) a 37.2 kg et un cacaoyer sous ombrage léger (Newbouldia laevis) 28 kg. A plus de 5m du pied de l'arbre compagnon quel qu'il soit les biomasses des cacaoyers ne varient que très peu (respectivement 21 kg et 19.7kg) . 
+Ainsi, j'ai retenu de manière schématique que la biomasse augmente avec l'ombrage dans un rayon de 5m autour de l'arbre. 
+
+Le modèle de Zuidema et al., pour un âge de 8 ans, donne une biomasse aérienne de 23.8 kg ce qui est supérieur de 13.1% aux résultats de Isaac et al. Cela peut venir du fait que les plantations dont est tiré le modèle sont pour une majeure partie d'entre elles ombragées. Je considère donc que pour obtenir la biomasse aérienne d'un cacaoyer plein soleil il faut baisser le résultat de l'équation de Zuidema de 13.1%. 
+
+J'ai ensuite classé les arbres compagnons de mes parcelles en deux grandes catégories:
+
+- ombrage léger (arbres dont le port et l'ombrage sont similaires à celui de Newbouldia laevis)
+
+- ombrage dense (arbres dont le port et l'ombrage sont similaire à celui de Milicia excelsa). 
+
+Dans ces deux grandes catégories j'ai sélectionné les individus qui sont plus hauts que les cacaoyers (cette taille varie selon les plantations et cette information a été relevée lors de l'inventaire) et qui leur fournissent donc un ombrage. Ensuite, à l'aide d'un SIG un cercle de 5m de rayon a été tracé autour de ces arbres et l'emprise au sol de ces cercles (schématisant l'ombrage) a été mesurée. 
+Cette méthode permet d'obtenir pour 1 hectare de plantation la proportion de cacaoyers situés en plein soleil, la proportion sous ombrage léger et la proportion sous ombrage dense. A l'aide de la densité de cacaoyers précédemment calculée, on peut donc connaître le nombre de cacaoyers pour chaque type d'ombrage. 
+
+Enfin, certains arbres ont un effet sur la densité de cacaoyers. A leur pied, et sur une distance variant selon les espèces, aucun cacaoyer ne pousse. Nos relevés de terrains ont permis de dresser une liste de ces arbres et d'estimer, selon l'espèce, un rayon sur lequel aucun cacaoyer ne pousse. Ces surfaces ont été représentées dans le SIG pour les arbres dont le périmètre est supérieur à 45cm. Elles ont été mesurées puis retirées des catégories correspondantes (plein soleil, ombrage dense, ombrage léger). 
+
+Une fois les trois catégories de cacaoyers bien définies, la régression de Zuidema et al. est appliquée à chaque catégorie et pondérée en fonction des résultats d'Isaac et al.: 
+- moins 13.1 % pour le plein soleil
+- plus 15 % pour l'ombrage léger
+- plus 36.1% pour l'ombrage dense.
+
+```{r include=FALSE}
+Carbonestimated$kkobiomfullsun<-((((8.46*log(Carbonestimated$age_champ)+9.4)*88.2)/100)*Carbonestimated$kkofullsun)/1000
+Carbonestimated$kkobiomfullsun<-Carbonestimated$kkobiomfullsun-((Carbonestimated$kkobiomfullsun*13.1)/100)
+
+Carbonestimated$kkobiomlightshad<-((((8.46*log(Carbonestimated$age_champ)+9.4)*88.2)/100)*Carbonestimated$kkolightshad)/1000
+Carbonestimated$kkobiomlightshad<-Carbonestimated$kkobiomlightshad+((Carbonestimated$kkobiomlightshad*15)/100)
+
+Carbonestimated$kkobiomdensshad<-((((8.46*log(Carbonestimated$age_champ)+9.4)*88.2)/100)*Carbonestimated$kkodensshad)/1000
+Carbonestimated$kkobiomdensshad<-Carbonestimated$kkobiomdensshad+((Carbonestimated$kkobiomdensshad*36.1)/100)
+Carbonestimated$kkobiomasse2<-Carbonestimated$kkobiomdensshad+Carbonestimated$kkobiomlightshad+Carbonestimated$kkobiomfullsun
+```
 
 
-#Estimation de la biomasse totale et du carbone (Tonnes/hect) (arbres associés + cacaoyers)
+#Estimation de la biomasse totale et du carbone (Tonnes/hect) (arbres compagnons + cacaoyers)
+
+densit= densité des arbres compagnons
+
+biomhect = biomasse des arbres compagnons
+
+kkobiomasse et carbontot= résultat selon la méthode n°1
+
+kkobiomasse2 et carbontot2= résultat selon la méthode n°2
+
 ```{r include=FALSE}
 Carbonestimated$biomtot<-Carbonestimated$biomhect+Carbonestimated$kkobiomasse
+Carbonestimated$biomtot2<-Carbonestimated$biomhect+Carbonestimated$kkobiomasse2
 Carbonestimated$carbontot<-Carbonestimated$biomtot/2
+Carbonestimated$carbontot2<-Carbonestimated$biomtot2/2
 ```
 
 ```{r echo=FALSE}
-Carbonestimated[,c("code","densit","biomhect","kkobiomasse","biomtot","carbontot")]
+Carbonestimated[,c("code","biomhect","kkobiomasse","kkobiomasse2","carbontot","carbontot2")]
 ```
-```{r}
-hist(Carbonestimated$carbontot)
-boxplot(Carbonestimated$carbontot,main="Tonne de carbone/hect")
+```{r echo=FALSE}
+hist(Carbonestimated$carbontot, main="Méthode 1")
+boxplot(Carbonestimated$carbontot,main="Tonne de carbone/hect (méthode 1)")
+
+hist(Carbonestimated$carbontot2, main="Méthode 2")
+boxplot(Carbonestimated$carbontot2,main="Tonne de carbone/hect (méthode 2)")
+
+plot(Carbonestimated$carbontot,Carbonestimated$carbontot2,main="Comparaison des deux méthodes",abline(0,1))
 ```
 
-Les parcelles étudiées stockent de
+Avec la méthode n°1, les parcelles étudiées stockent de
 ```{r echo=FALSE, results='asis'}
 min(Carbonestimated$carbontot)
 ```
@@ -175,11 +262,32 @@ sd(Carbonestimated$carbontot)
 ```
 ) tonnes de carbone/hectare. 
 
+Avec la méthode n°2, les parcelles étudiées stockent de
+```{r echo=FALSE, results='asis'}
+min(Carbonestimated$carbontot2)
+```
+à
+```{r echo=FALSE, results='asis'}
+max(Carbonestimated$carbontot2)
+```
+tonnes de carbone par hectare (cacaoyers+arbres associés). 
+
+En moyenne on estime 
+```{r echo=FALSE, results="asis"}
+mean(Carbonestimated$carbontot2)
+```
+(sd
+```{r echo=FALSE, results="asis"}
+sd(Carbonestimated$carbontot2)
+```
+) tonnes de carbone/hectare. 
+
+
 Pour indication, d'après Nijmeijer et al., (2017) une agroforêt à cacao camerounaise stocke en moyenne 72 tonnes par hectare (sd 8). 
 
-Il convient de garder à l'esprit que l'estimation de biomasse aérienne des cacaoyers peut être sur-estimée dans notre étude: en effet les données d'observation sont issues de plantation ombragées. Dans ces conditions d'ombrage, les cacaoyers ont plus de biomasse que dans des conditions moins ombragées comme on l'observe plus couramment en Côte d'Ivoire. 
 
-#Estimation du carbone par type d'arbres(planté, recrû,...)
+
+#Estimation du carbone par type d'arbres compagnons (planté, recrû,...)
 
 ```{r include=FALSE}
 carbondata$meth_introsimp[carbondata$meth_intro == "1"] <- "1"
